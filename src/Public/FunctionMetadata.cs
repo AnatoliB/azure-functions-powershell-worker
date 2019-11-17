@@ -15,10 +15,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     /// </summary>
     public static class FunctionMetadata
     {
-        private static ConcurrentDictionary<Guid, ReadOnlyDictionary<string, ReadOnlyBindingInfo>> OutputBindingMetadata
+        private static readonly ConcurrentDictionary<Guid, ReadOnlyDictionary<string, ReadOnlyBindingInfo>> OutputBindingMetadata
             = new ConcurrentDictionary<Guid, ReadOnlyDictionary<string, ReadOnlyBindingInfo>>();
 
-        private static ConcurrentDictionary<Guid, Hashtable> OutputBindingValues = new ConcurrentDictionary<Guid, Hashtable>();
+        private static readonly ConcurrentDictionary<Guid, Hashtable> OutputBindingValues = new ConcurrentDictionary<Guid, Hashtable>();
 
         /// <summary>
         /// Get the binding metadata for the given Runspace instance id.
