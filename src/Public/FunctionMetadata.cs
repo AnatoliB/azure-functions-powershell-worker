@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     /// </summary>
     public static class FunctionMetadata
     {
-        private static ConcurrentDictionary<Guid, ReadOnlyDictionary<string, ReadOnlyBindingInfo>> OutputBindingCache
+        private static ConcurrentDictionary<Guid, ReadOnlyDictionary<string, ReadOnlyBindingInfo>> OutputBindingMetadata
             = new ConcurrentDictionary<Guid, ReadOnlyDictionary<string, ReadOnlyBindingInfo>>();
 
         private static ConcurrentDictionary<Guid, Hashtable> OutputBindingValues = new ConcurrentDictionary<Guid, Hashtable>();
@@ -25,7 +25,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         public static ReadOnlyDictionary<string, ReadOnlyBindingInfo> GetOutputBindingInfo(Guid runspaceInstanceId)
         {
-            OutputBindingCache.TryGetValue(runspaceInstanceId, out var outputBindings);
+            OutputBindingMetadata.TryGetValue(runspaceInstanceId, out var outputBindings);
             return outputBindings;
         }
 
@@ -45,7 +45,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         internal static void RegisterFunctionMetadata(Guid instanceId, AzFunctionInfo functionInfo)
         {
             var outputBindings = functionInfo.OutputBindings;
-            OutputBindingCache.AddOrUpdate(instanceId, outputBindings, (key, value) => outputBindings);
+            OutputBindingMetadata.AddOrUpdate(instanceId, outputBindings, (key, value) => outputBindings);
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal static void UnregisterFunctionMetadata(Guid instanceId)
         {
-            OutputBindingCache.TryRemove(instanceId, out _);
+            OutputBindingMetadata.TryRemove(instanceId, out _);
         }
     }
 }
