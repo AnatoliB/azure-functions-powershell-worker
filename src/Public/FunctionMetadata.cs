@@ -26,8 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         public static ReadOnlyDictionary<string, ReadOnlyBindingInfo> GetOutputBindingInfo(Guid runspaceInstanceId)
         {
-            ReadOnlyDictionary<string, ReadOnlyBindingInfo> outputBindings = null;
-            OutputBindingCache.TryGetValue(runspaceInstanceId, out outputBindings);
+            OutputBindingCache.TryGetValue(runspaceInstanceId, out var outputBindings);
             return outputBindings;
         }
 
