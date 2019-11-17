@@ -201,7 +201,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             string entryPoint = functionInfo.EntryPoint;
             var hasSetInvocationContext = false;
 
-            Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
+            Hashtable outputBindings = FunctionMetadata.GetOutputBindingValues(_pwsh.Runspace.InstanceId);
 
             try
             {

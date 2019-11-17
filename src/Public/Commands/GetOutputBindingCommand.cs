@@ -51,7 +51,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
         protected override void BeginProcessing()
         {
             _retHashtable = new Hashtable(StringComparer.OrdinalIgnoreCase);
-            _outputBindings = FunctionMetadata.GetOutputBindingHashtable(Runspace.DefaultRunspace.InstanceId);
+            _outputBindings = FunctionMetadata.GetOutputBindingValues(Runspace.DefaultRunspace.InstanceId);
         }
 
         /// <summary>

@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Get the Hashtable that is holding the output binding values for the given Runspace.
         /// </summary>
-        internal static Hashtable GetOutputBindingHashtable(Guid runspaceInstanceId)
+        internal static Hashtable GetOutputBindingValues(Guid runspaceInstanceId)
         {
             return OutputBindingValues.GetOrAdd(
                 runspaceInstanceId,

@@ -108,7 +108,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
-                Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(testManager.InstanceId);
+                Hashtable outputBindings = FunctionMetadata.GetOutputBindingValues(testManager.InstanceId);
                 Assert.Empty(outputBindings);
 
                 // A PowerShell function should be created fro the Az function.
@@ -133,7 +133,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
-                Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(testManager.InstanceId);
+                Hashtable outputBindings = FunctionMetadata.GetOutputBindingValues(testManager.InstanceId);
                 Assert.Empty(outputBindings);
 
                 // A PowerShell function should be created fro the Az function.
@@ -158,7 +158,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
-                Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(testManager.InstanceId);
+                Hashtable outputBindings = FunctionMetadata.GetOutputBindingValues(testManager.InstanceId);
                 Assert.Empty(outputBindings);
 
                 // When function script has #requires, not PowerShell function will be created for the Az function,
@@ -190,7 +190,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Hashtable result = InvokeFunction(testManager, functionInfo, triggerMetadata);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
-                Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(testManager.InstanceId);
+                Hashtable outputBindings = FunctionMetadata.GetOutputBindingValues(testManager.InstanceId);
                 Assert.Empty(outputBindings);
 
                 // A PowerShell function should be created fro the Az function.
@@ -215,7 +215,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
-                Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(testManager.InstanceId);
+                Hashtable outputBindings = FunctionMetadata.GetOutputBindingValues(testManager.InstanceId);
                 Assert.Empty(outputBindings);
 
                 string expectedResult = $"{TestStringData},Run";

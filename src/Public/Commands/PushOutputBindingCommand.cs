@@ -93,7 +93,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
         {
             _bindingInfo = GetBindingInfo(Name);
             _behavior = GetDataCollectingBehavior(_bindingInfo);
-            _outputBindings = FunctionMetadata.GetOutputBindingHashtable(Runspace.DefaultRunspace.InstanceId);
+            _outputBindings = FunctionMetadata.GetOutputBindingValues(Runspace.DefaultRunspace.InstanceId);
         }
 
         /// <summary>
