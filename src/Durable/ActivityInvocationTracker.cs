@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                             break;
 
                         case HistoryEventType.TaskFailed:
-                            throw new Exception($"Result: Failure\nException: {taskCompleted.Reason}\n\n$OutOfProcData${{\"MyStateField\":\"MyStateValue\"}}\nStack: TODO");
+                            throw new OrchestrationFailureException($"Result: Failure\nException: {taskCompleted.Reason}\n\n$OutOfProcData${{\"MyStateField\":\"MyStateValue\"}}\nStack: TODO");
                     }
                 }
                 else
