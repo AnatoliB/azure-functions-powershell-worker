@@ -8,6 +8,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Management.Automation;
 
     using PowerShellWorker.Utility;
@@ -28,6 +29,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 {
                     // The orchestration function should be stopped and restarted
                     pwsh.StopInvoke();
+                    var orchestrationFailure = pwsh.GetErrorStream().FirstOrDefault(e => e.Exception is OrchestrationFailureException);
                     return CreateOrchestrationResult(isDone: false, actions, output: null);
                 }
                 else
