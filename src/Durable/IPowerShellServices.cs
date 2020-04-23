@@ -22,6 +22,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         void StopInvoke();
 
+        PSDataCollection<ErrorRecord> GetErrorStream();
+
         void ClearStreamsAndCommands();
     }
 }

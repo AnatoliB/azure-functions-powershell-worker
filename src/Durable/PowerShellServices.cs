@@ -65,6 +65,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _pwsh.Stop();
         }
 
+        public PSDataCollection<ErrorRecord> GetErrorStream()
+        {
+            return _pwsh.Streams.Error;
+        }
+
         public void ClearStreamsAndCommands()
         {
             _pwsh.Streams.ClearStreams();
