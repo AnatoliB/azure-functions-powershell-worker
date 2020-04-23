@@ -42,7 +42,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 {
                     taskScheduled.IsProcessed = true;
                     taskCompleted.IsProcessed = true;
-                    output(GetEventResult(taskCompleted));
+                    switch (taskCompleted.EventType)
+                    {
+                        case HistoryEventType.TaskCompleted:
+                            output(GetEventResult(taskCompleted));
+                            break;
+
+                        case HistoryEventType.TaskFailed:
+                            throw new Exception($"Result: Failure\nException: {taskCompleted.Reason}\n\n$OutOfProcData${{\"MyStateField\":\"MyStateValue\"}}\nStack: TODO");
+                    }
                 }
                 else
                 {
@@ -110,7 +118,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             return taskScheduled == null
                 ? null
                 : context.History.FirstOrDefault(
-                    e => e.EventType == HistoryEventType.TaskCompleted &&
+                    e => (e.EventType == HistoryEventType.TaskCompleted || e.EventType == HistoryEventType.TaskFailed) &&
                          e.TaskScheduledId == taskScheduled.EventId);
         }
 
