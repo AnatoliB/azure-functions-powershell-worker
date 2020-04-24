@@ -4,6 +4,8 @@ param($Context)
 
 Write-Host 'FunctionChainingOrchestrator: started.'
 
+$ErrorActionPreference = 'Stop'
+
 $output = @()
 
 Write-Warning 'Invoking SayHello(Tokyo)'
