@@ -29,13 +29,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 {
                     // The orchestration function should be stopped and restarted
                     pwsh.StopInvoke();
-                    var orchestrationFailure = pwsh.GetErrorStream().FirstOrDefault(e => e.Exception is OrchestrationFailureException);
-                    return CreateOrchestrationResult(isDone: false, actions, output: null);
+                    //var orchestrationFailure = pwsh.GetErrorStream().FirstOrDefault(e => e.Exception is OrchestrationFailureException);
+                    //if (orchestrationFailure == null)
+                    //{
+                    //    return CreateOrchestrationResult(isDone: false, actions, output: null);
+                    //}
+                    //else
+                    //{
+                    //    var result = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(outputBuffer);
+                    //    return CreateOrchestrationResult(isDone: true, actions, output: result);
+                    //}
                 }
                 else
                 {
                     // The orchestration function completed
-                    pwsh.EndInvoke(asyncResult);
+                    try
+                    {
+                        pwsh.EndInvoke(asyncResult);
+                    }
+                    catch (CmdletInvocationException ex)
+                    {
+                        if (!(ex.InnerException is OrchestrationFailureException))
+                        {
+                            throw;
+                        }
+
+                        var result2 = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(outputBuffer);
+                        return CreateOrchestrationResult(isDone: true, actions, output: result2);
+                    }
+
                     var result = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(outputBuffer);
                     return CreateOrchestrationResult(isDone: true, actions, output: result);
                 }
