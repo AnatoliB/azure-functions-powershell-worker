@@ -1,7 +1,9 @@
 param($name)
 
 Write-Host "SayHello($name) started"
-Start-Sleep -Seconds 5
+if ($name -eq 'Seattle') {
+    throw "Injected error"
+}
 Write-Host "SayHello($name) finished"
 
 "Hello $name"
