@@ -33,6 +33,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
         [Parameter]
         public SwitchParameter NoWait { get; set; }
 
+        [Parameter]
+        public RetryOptions RetryOptions { get; set; }
+
         private readonly DurableTaskHandler _durableTaskHandler = new DurableTaskHandler();
 
         protected override void EndProcessing()

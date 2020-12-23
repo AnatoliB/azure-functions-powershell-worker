@@ -216,8 +216,5 @@ function New-DurableRetryOptions(
     [int]
     $MaxNumberOfAttempts) {
 
-    @{
-        FirstRetryInterval = $FirstRetryInterval
-        MaxNumberOfAttempts = $MaxNumberOfAttempts
-    }
+    [Microsoft.Azure.Functions.PowerShellWorker.Durable.RetryOptions]::new($FirstRetryInterval, $MaxNumberOfAttempts)
 }
