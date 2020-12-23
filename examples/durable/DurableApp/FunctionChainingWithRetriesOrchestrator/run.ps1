@@ -2,6 +2,8 @@ using namespace System.Net
 
 param($Context)
 
+$ErrorActionPreference = 'Stop'
+
 $output = @()
 
 $retryOptions = New-DurableRetryOptions `
