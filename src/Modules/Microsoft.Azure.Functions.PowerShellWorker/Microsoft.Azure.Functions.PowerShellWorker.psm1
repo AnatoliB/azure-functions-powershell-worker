@@ -208,3 +208,16 @@ function GetRaiseEventUrl(
 
     return $RequestUrl
 }
+
+function New-DurableRetryOptions(
+    [timespan]
+    $FirstRetryInterval,
+
+    [int]
+    $MaxNumberOfAttempts) {
+
+    @{
+        FirstRetryInterval = $FirstRetryInterval
+        MaxNumberOfAttempts = $MaxNumberOfAttempts
+    }
+}
