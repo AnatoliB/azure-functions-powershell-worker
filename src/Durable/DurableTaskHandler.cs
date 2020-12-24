@@ -20,7 +20,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             OrchestrationContext context,
             bool noWait,
             Action<object> output,
-            Action<string> onFailure)
+            Action<string> onFailure,
+            RetryOptions retryOptions = null)
         {
             context.OrchestrationActionCollector.Add(task.CreateOrchestrationAction());
 
