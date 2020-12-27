@@ -11,28 +11,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     public class RetryOptions
     {
-        public readonly int firstRetryIntervalInMilliseconds;
+        public readonly double firstRetryIntervalInMilliseconds;
 
         public readonly int maxNumberOfAttempts;
 
-        public readonly int backoffCoefficient;
+        public readonly double backoffCoefficient;
 
-        public readonly int maxRetryIntervalInMilliseconds;
+        public readonly double maxRetryIntervalInMilliseconds;
 
-        public readonly int retryTimeoutInMilliseconds;
+        public readonly double retryTimeoutInMilliseconds;
 
         public RetryOptions(
             TimeSpan firstRetryInterval,
             int maxNumberOfAttempts,
-            int backoffCoefficient,
-            int maxRetryIntervalInMilliseconds,
-            int retryTimeoutInMilliseconds)
+            double backoffCoefficient,
+            TimeSpan maxRetryInterval,
+            TimeSpan retryTimeout)
         {
-            firstRetryIntervalInMilliseconds = (int)firstRetryInterval.TotalMilliseconds;
+            this.firstRetryIntervalInMilliseconds = firstRetryInterval.TotalMilliseconds;
             this.maxNumberOfAttempts = maxNumberOfAttempts;
             this.backoffCoefficient = backoffCoefficient;
-            this.maxRetryIntervalInMilliseconds = maxRetryIntervalInMilliseconds;
-            this.retryTimeoutInMilliseconds = retryTimeoutInMilliseconds;
+            this.maxRetryIntervalInMilliseconds = maxRetryInterval.TotalMilliseconds;
+            this.retryTimeoutInMilliseconds = retryTimeout.TotalMilliseconds;
         }
     }
 }

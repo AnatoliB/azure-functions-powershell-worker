@@ -210,11 +210,23 @@ function GetRaiseEventUrl(
 }
 
 function New-DurableRetryOptions(
+    [Parameter(Mandatory = $true)]
     [timespan]
     $FirstRetryInterval,
 
+    [Parameter(Mandatory = $true)]
     [int]
-    $MaxNumberOfAttempts) {
+    $MaxNumberOfAttempts,
+    
+    [double]
+    $BackoffCoefficient,
+    
+    [timespan]
+    $MaxRetryInterval,
+    
+    [timespan]
+    $RetryTimeout) {
 
-    [Microsoft.Azure.Functions.PowerShellWorker.Durable.RetryOptions]::new($FirstRetryInterval, $MaxNumberOfAttempts)
+    [Microsoft.Azure.Functions.PowerShellWorker.Durable.RetryOptions]::new(
+        $FirstRetryInterval, $MaxNumberOfAttempts, $BackoffCoefficient, $MaxRetryInterval, $RetryTimeout)
 }
