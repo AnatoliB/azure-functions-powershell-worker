@@ -11,14 +11,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     public class RetryOptions
     {
-        public TimeSpan FirstRetryInterval { get; }
+        public readonly int firstRetryIntervalInMilliseconds;
+
+        public readonly int maxNumberOfAttempts;
 
         public RetryOptions(TimeSpan firstRetryInterval, int maxNumberOfAttempts)
         {
-            FirstRetryInterval = firstRetryInterval;
-            MaxNumberOfAttempts = maxNumberOfAttempts;
+            firstRetryIntervalInMilliseconds = (int)firstRetryInterval.TotalMilliseconds;
+            this.maxNumberOfAttempts = maxNumberOfAttempts;
         }
-
-        public int MaxNumberOfAttempts { get; }
     }
 }
