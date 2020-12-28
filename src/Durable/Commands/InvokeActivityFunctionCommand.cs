@@ -30,10 +30,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
         [ValidateNotNull]
         public object Input { get; set; }
 
-        [Parameter]
+        [Parameter(ParameterSetName = "NoWait")]
         public SwitchParameter NoWait { get; set; }
 
-        [Parameter]
+        [Parameter(ParameterSetName = "Retry")]
         public RetryOptions RetryOptions { get; set; }
 
         private readonly DurableTaskHandler _durableTaskHandler = new DurableTaskHandler();
