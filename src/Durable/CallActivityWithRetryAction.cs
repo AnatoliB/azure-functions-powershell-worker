@@ -8,14 +8,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     /// <summary>
     /// An orchestration action that represents calling an activity function with retry.
     /// </summary>
-    internal class CallActivityWithRetryAction : CallActivityAction
+    internal class CallActivityWithRetryAction : OrchestrationAction
     {
+        /// <summary>
+        /// The activity function name.
+        /// </summary>
+        public readonly string FunctionName;
+        
+        /// <summary>
+        /// The input to the activity function.
+        /// </summary>
+        public readonly object Input;
+
         public readonly RetryOptions RetryOptions;
 
         public CallActivityWithRetryAction(string functionName, object input, RetryOptions retryOptions)
-            : base(functionName, input)
+            : base(ActionType.CallActivityWithRetry)
         {
-            this.RetryOptions = retryOptions;
+            FunctionName = functionName;
+            Input = input;
+            RetryOptions = retryOptions;
         }
     }
 }
