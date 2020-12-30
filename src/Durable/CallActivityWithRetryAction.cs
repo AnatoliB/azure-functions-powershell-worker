@@ -3,6 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Collections.Generic;
+
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     /// <summary>
@@ -20,14 +22,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         /// </summary>
         public readonly object Input;
 
-        public readonly RetryOptions RetryOptions;
+        public readonly Dictionary<string, object> RetryOptions;
 
         public CallActivityWithRetryAction(string functionName, object input, RetryOptions retryOptions)
             : base(ActionType.CallActivityWithRetry)
         {
             FunctionName = functionName;
             Input = input;
-            RetryOptions = retryOptions;
+            RetryOptions = new Dictionary<string, object>() {
+                { "firstRetryIntervalInMilliseconds", 5000 },
+                { "maxNumberOfAttempts", 3 }
+            };
         }
     }
 }
