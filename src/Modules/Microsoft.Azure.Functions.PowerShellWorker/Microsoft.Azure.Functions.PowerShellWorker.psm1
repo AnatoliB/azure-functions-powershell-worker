@@ -228,5 +228,9 @@ function New-DurableRetryOptions(
     $RetryTimeout) {
 
     [Microsoft.Azure.Functions.PowerShellWorker.Durable.RetryOptions]::new(
-        $FirstRetryInterval, $MaxNumberOfAttempts, $BackoffCoefficient, $MaxRetryInterval, $RetryTimeout)
+        $FirstRetryInterval,
+        $MaxNumberOfAttempts,
+        $PSBoundParameters.ContainsKey('BackoffCoefficient') ? $BackoffCoefficient : $null,
+        $MaxRetryInterval,
+        $RetryTimeout)
 }
