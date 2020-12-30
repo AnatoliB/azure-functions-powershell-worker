@@ -37,13 +37,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var result = new Dictionary<string, object>()
                             {
-                                { "firstRetryIntervalInMilliseconds", retryOptions.FirstRetryInterval.TotalMilliseconds },
+                                { "firstRetryIntervalInMilliseconds", ToIntMilliseconds(retryOptions.FirstRetryInterval) },
                                 { "maxNumberOfAttempts", retryOptions.MaxNumberOfAttempts }
                             };
 
             AddOptionalValue(result, "backoffCoefficient", retryOptions.BackoffCoefficient, x => x);
-            AddOptionalValue(result, "maxRetryIntervalInMilliseconds", retryOptions.MaxRetryInterval, x => x.TotalMilliseconds);
-            AddOptionalValue(result, "retryTimeoutInMilliseconds", retryOptions.RetryTimeout, x => x.TotalMilliseconds);
+            AddOptionalValue(result, "maxRetryIntervalInMilliseconds", retryOptions.MaxRetryInterval, ToIntMilliseconds);
+            AddOptionalValue(result, "retryTimeoutInMilliseconds", retryOptions.RetryTimeout, ToIntMilliseconds);
 
             return result;
         }
@@ -58,6 +58,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 dictionary.Add(name, transformValue(nullable.Value));
             }
+        }
+
+        private static object ToIntMilliseconds(TimeSpan timespan)
+        {
+            return (int)timespan.TotalMilliseconds;
         }
     }
 }

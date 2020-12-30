@@ -14,23 +14,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [Theory]
         [InlineData(1, 1, null, null, null)]
         [InlineData(5, 3, null, null, null)]
-        [InlineData(2, 3, 1, null, null)]
+        [InlineData(2, 3, 1.0, null, null)]
         [InlineData(4, 3, null, 1, null)]
         [InlineData(8, 3, null, null, 1)]
-        [InlineData(1, 3, 5, 6, 7)]
+        [InlineData(1, 3, 0.5, 6, 7)]
         public void RetryOptionsContainsNonNullProperties(
-            double firstRetryIntervalInMilliseconds,
+            int firstRetryIntervalInMilliseconds,
             int maxNumberOfAttempts,
             double? backoffCoefficient,
-            double? maxRetryIntervalInMilliseconds,
-            double? retryTimeoutInMilliseconds)
+            int? maxRetryIntervalInMilliseconds,
+            int? retryTimeoutInMilliseconds)
         {
             var retryOptions = new RetryOptions(
                 TimeSpan.FromMilliseconds(firstRetryIntervalInMilliseconds),
                 maxNumberOfAttempts,
                 backoffCoefficient,
-                CreateTimeSpan(maxRetryIntervalInMilliseconds),
-                CreateTimeSpan(retryTimeoutInMilliseconds));
+                CreateTimeSpanOrNull(maxRetryIntervalInMilliseconds),
+                CreateTimeSpanOrNull(retryTimeoutInMilliseconds));
 
             var action = new CallActivityWithRetryAction("FunctionName", "input", retryOptions);
 
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             }
         }
 
-        private static TimeSpan? CreateTimeSpan(double? milliseconds)
+        private static TimeSpan? CreateTimeSpanOrNull(double? milliseconds)
         {
             return milliseconds.HasValue ? TimeSpan.FromMilliseconds(milliseconds.Value) : (TimeSpan?)null;
         }
