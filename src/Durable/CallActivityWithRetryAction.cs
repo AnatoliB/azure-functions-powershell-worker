@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
@@ -29,10 +30,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             FunctionName = functionName;
             Input = input;
-            RetryOptions = new Dictionary<string, object>() {
-                { "firstRetryIntervalInMilliseconds", 5000 },
-                { "maxNumberOfAttempts", 3 }
-            };
+            RetryOptions = ToDictionary(retryOptions);
+        }
+
+        private static Dictionary<string, object> ToDictionary(RetryOptions retryOptions)
+        {
+            var result = new Dictionary<string, object>()
+                            {
+                                { "firstRetryIntervalInMilliseconds", retryOptions.FirstRetryInterval.TotalMilliseconds },
+                                { "maxNumberOfAttempts", retryOptions.MaxNumberOfAttempts }
+                            };
+
+            AddOptionalValue(result, "backoffCoefficient", retryOptions.BackoffCoefficient, x => x);
+            AddOptionalValue(result, "maxRetryIntervalInMilliseconds", retryOptions.MaxRetryInterval, x => x.TotalMilliseconds);
+            AddOptionalValue(result, "retryTimeoutInMilliseconds", retryOptions.RetryTimeout, x => x.TotalMilliseconds);
+
+            return result;
+        }
+
+        private static void AddOptionalValue<T>(
+            Dictionary<string, object> dictionary,
+            string name,
+            T? nullable,
+            Func<T, object> transformValue) where T : struct
+        {
+            if (nullable.HasValue)
+            {
+                dictionary.Add(name, transformValue(nullable.Value));
+            }
         }
     }
 }
