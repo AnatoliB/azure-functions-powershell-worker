@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions
 {
     /// <summary>
     /// An orchestration action that represents calling an activity function with retry.
@@ -17,7 +17,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         /// The activity function name.
         /// </summary>
         public readonly string FunctionName;
-        
+
         /// <summary>
         /// The input to the activity function.
         /// </summary>

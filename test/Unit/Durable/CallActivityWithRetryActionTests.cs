@@ -7,6 +7,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 {
     using System;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
     using Xunit;
 
     public class CallActivityWithRetryActionTests
