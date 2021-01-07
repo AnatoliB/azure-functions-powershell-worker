@@ -9,9 +9,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     internal class RetryHandler
     {
-        public static bool ShouldRetry(OrchestrationContext context, RetryOptions retryOptions)
+        public static bool ShouldRetry(HistoryEvent[] orchestrationHistory, RetryOptions retryOptions)
         {
-            var attempts = context.History.Count(e => e.EventType == HistoryEventType.TaskFailed);
+            var attempts = orchestrationHistory.Count(e => e.EventType == HistoryEventType.TaskFailed);
             return !(retryOptions == null || attempts >= retryOptions.MaxNumberOfAttempts);
         }
     }
