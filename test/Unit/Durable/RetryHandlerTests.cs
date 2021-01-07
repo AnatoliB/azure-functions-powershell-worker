@@ -29,14 +29,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.True(shouldRetry);
         }
 
-        [Fact]
-        public void DoesNotRetryIfReachedMaxNumberOfAttempts()
+        [Theory]
+        [InlineData(0, 0, false)]
+        [InlineData(1, 0, false)]
+        [InlineData(0, 1, true)]
+        [InlineData(1, 1, false)]
+        [InlineData(0, 2, true)]
+        [InlineData(1, 2, true)]
+        [InlineData(2, 2, false)]
+        [InlineData(3, 2, false)]
+        [InlineData(99, 100, true)]
+        [InlineData(100, 100, false)]
+        public void RetriesUntilMaxNumberOfAttempts(int performedAttempts, int maxAttempts, bool expectedRetry)
         {
-            const int MaxNumberOfAttempts = 3;
-            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), MaxNumberOfAttempts, null, null, null);
-            var history = CreateActivityRetriesHistory("ActivityName", MaxNumberOfAttempts, lastAttemptSucceeded: false, "Reason");
+            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxAttempts, null, null, null);
+            var history = CreateActivityRetriesHistory("ActivityName", performedAttempts, lastAttemptSucceeded: false, "Reason");
             var shouldRetry = RetryHandler.ShouldRetry(history, retryOptions);
-            Assert.False(shouldRetry);
+            Assert.Equal(expectedRetry, shouldRetry);
         }
 
         private HistoryEvent[] CreateActivityRetriesHistory(string name, int performedAttempts, bool lastAttemptSucceeded, string output)
