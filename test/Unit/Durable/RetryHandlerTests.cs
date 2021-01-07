@@ -12,14 +12,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     public class RetryHandlerTests
     {
         [Fact]
-        public void ShouldNotRetryIfNoRetryOptions()
+        public void DoesNotRetryIfNoRetryOptions()
         {
             var shouldRetry = RetryHandler.ShouldRetry(new HistoryEvent[0], retryOptions: null);
             Assert.False(shouldRetry);
         }
 
         [Fact]
-        public void ShouldRetry()
+        public void RetriesIfRetryOptionsProvided()
         {
             var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxNumberOfAttempts: 3, null, null, null);
             var shouldRetry = RetryHandler.ShouldRetry(new HistoryEvent[0], retryOptions);
