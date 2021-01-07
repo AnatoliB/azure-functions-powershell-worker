@@ -34,6 +34,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(1, 0, false)]
         [InlineData(0, 1, true)]
         [InlineData(1, 1, false)]
+        [InlineData(2, 1, false)]
         [InlineData(0, 2, true)]
         [InlineData(1, 2, true)]
         [InlineData(2, 2, false)]
