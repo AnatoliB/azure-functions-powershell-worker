@@ -17,6 +17,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
 
             var attempts = orchestrationHistory.Count(e => e.EventType == HistoryEventType.TaskFailed);
+
+            foreach (var historyEvent in orchestrationHistory)
+            {
+                historyEvent.IsProcessed = true;
+            }
+
             return attempts < retryOptions.MaxNumberOfAttempts;
         }
     }
