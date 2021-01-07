@@ -11,8 +11,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         public static bool ShouldRetry(HistoryEvent[] orchestrationHistory, RetryOptions retryOptions)
         {
+            if (retryOptions == null)
+            {
+                return false;
+            }
+
             var attempts = orchestrationHistory.Count(e => e.EventType == HistoryEventType.TaskFailed);
-            return !(retryOptions == null || attempts >= retryOptions.MaxNumberOfAttempts);
+            return attempts < retryOptions.MaxNumberOfAttempts;
         }
     }
 }
