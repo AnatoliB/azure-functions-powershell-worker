@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void RetriesUntilMaxNumberOfAttempts(int performedAttempts, int maxAttempts, bool expectedRetry)
         {
             var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxAttempts, null, null, null);
-            var history = CreateActivityRetriesHistory("ActivityName", performedAttempts, lastAttemptSucceeded: false);
+            var history = CreateActivityRetriesHistory(performedAttempts, lastAttemptSucceeded: false);
             var shouldRetry = RetryHandler.ShouldRetry(history, retryOptions);
             Assert.Equal(expectedRetry, shouldRetry);
         }
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void MarksRelevantEventsAsProcessed()
         {
             var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxNumberOfAttempts: 3, null, null, null);
-            var history = CreateActivityRetriesHistory("ActivityName", 2, lastAttemptSucceeded: false);
+            var history = CreateActivityRetriesHistory(2, lastAttemptSucceeded: false);
             RetryHandler.ShouldRetry(history, retryOptions);
 
             foreach (var historyEvent in history)
@@ -62,21 +62,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             }
         }
 
-        private HistoryEvent[] CreateActivityRetriesHistory(string name, int performedAttempts, bool lastAttemptSucceeded)
+        private HistoryEvent[] CreateActivityRetriesHistory(int performedAttempts, bool lastAttemptSucceeded)
         {
             var result = new HistoryEvent[0];
 
             for (var attempt = 0; attempt < performedAttempts; ++attempt)
             {
                 var isLastAttempt = attempt == performedAttempts - 1;
-                var next = CreateActivityAttemptHistory(name, isLastAttempt && lastAttemptSucceeded);
+                var next = CreateActivityAttemptHistory(isLastAttempt && lastAttemptSucceeded);
                 result = DurableTestUtilities.MergeHistories(result, next);
             }
 
             return result;
         }
 
-        private HistoryEvent[] CreateActivityAttemptHistory(string name, bool succeeded)
+        private HistoryEvent[] CreateActivityAttemptHistory(bool succeeded)
         {
             var history = new List<HistoryEvent>();
 
@@ -87,7 +87,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     EventType = HistoryEventType.TaskScheduled,
                     EventId = taskScheduledEventId,
-                    Name = name
+                    Name = "dummy activity name"
                 });
 
             if (succeeded)
