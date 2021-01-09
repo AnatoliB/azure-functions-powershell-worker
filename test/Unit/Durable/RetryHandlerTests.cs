@@ -7,6 +7,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Xunit;
 
@@ -15,68 +16,118 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private int _nextEventId = 1;
 
         [Fact]
-        public void DoesNotRetryIfNoRetryOptions()
+        public void RetriesOnFirstFailureIfRetryOptionsAllow()
         {
-            var shouldRetry = RetryHandler.ShouldRetry(new HistoryEvent[0], retryOptions: null);
-            Assert.False(shouldRetry);
-        }
+            var history = CreateSingleAttemptHistory(succeeded: false);
+            var firstUnprocessedTaskScheduledEvent =
+                history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
+            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), 2, null, null, null);
 
-        [Fact]
-        public void RetriesIfRetryOptionsProvided()
-        {
-            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxNumberOfAttempts: 3, null, null, null);
-            var shouldRetry = RetryHandler.ShouldRetry(new HistoryEvent[0], retryOptions);
+            var shouldRetry = RetryHandler.ShouldRetry(
+                history,
+                firstUnprocessedTaskScheduledEvent,
+                retryOptions,
+                output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
+                onFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
+
             Assert.True(shouldRetry);
         }
 
         [Theory]
-        [InlineData(0, 0, false)]
-        [InlineData(1, 0, false)]
-        [InlineData(0, 1, true)]
-        [InlineData(1, 1, false)]
-        [InlineData(2, 1, false)]
-        [InlineData(0, 2, true)]
-        [InlineData(1, 2, true)]
-        [InlineData(2, 2, false)]
-        [InlineData(3, 2, false)]
-        [InlineData(99, 100, true)]
-        [InlineData(100, 100, false)]
-        public void RetriesUntilMaxNumberOfAttempts(int performedAttempts, int maxAttempts, bool expectedRetry)
+        [InlineData(0)]
+        [InlineData(1)]
+        public void DoesNotRetryOnFirstFailureIfRetryOptionsDoNotAllow(int maxNumberOfAttempts)
         {
-            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxAttempts, null, null, null);
-            var history = CreateActivityRetriesHistory(performedAttempts, lastAttemptSucceeded: false);
-            var shouldRetry = RetryHandler.ShouldRetry(history, retryOptions);
-            Assert.Equal(expectedRetry, shouldRetry);
+            const string FailureReason = "failure reason";
+            var history = CreateSingleAttemptHistory(succeeded: false, failureReason: FailureReason);
+            var firstUnprocessedTaskScheduledEvent =
+                history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
+            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxNumberOfAttempts, null, null, null);
+
+            string actualFailureReason = null;
+
+            var shouldRetry = RetryHandler.ShouldRetry(
+                history,
+                firstUnprocessedTaskScheduledEvent,
+                retryOptions,
+                output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
+                onFailure: reason =>
+                            {
+                                Assert.Null(actualFailureReason);
+                                actualFailureReason = reason;
+                            });
+
+            Assert.False(shouldRetry);
+            Assert.Equal(FailureReason, actualFailureReason);
         }
 
-        [Fact]
-        public void MarksRelevantEventsAsProcessed()
+        [Theory]
+        [InlineData(1, 1)]
+        [InlineData(2, 1)]
+        [InlineData(2, 2)]
+        [InlineData(100, 50)]
+        [InlineData(100, 100)]
+        public void DoesNotRetryOnSuccess(int maxNumberOfAttempts, int performedAttempts)
         {
-            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxNumberOfAttempts: 3, null, null, null);
-            var history = CreateActivityRetriesHistory(2, lastAttemptSucceeded: false);
-            RetryHandler.ShouldRetry(history, retryOptions);
+            const string SuccessOutput = "success output";
+            var history = CreateMultipleAttemptsHistory(
+                            performedAttempts: performedAttempts,
+                            lastAttemptSucceeded: true,
+                            successOutput: SuccessOutput,
+                            getFailureReason: _ => "dummy failure reason");
+            var firstUnprocessedTaskScheduledEvent =
+                history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
+            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxNumberOfAttempts, null, null, null);
 
-            foreach (var historyEvent in history)
-            {
-                Assert.True(historyEvent.IsProcessed);
-            }
+            object actualOutput = null;
+
+            var shouldRetry = RetryHandler.ShouldRetry(
+                history,
+                firstUnprocessedTaskScheduledEvent,
+                retryOptions,
+                output: obj =>
+                        {
+                            Assert.Null(actualOutput);
+                            actualOutput = obj;
+                        },
+                onFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
+
+            Assert.False(shouldRetry);
+            Assert.Equal(SuccessOutput, actualOutput);
         }
 
-        private HistoryEvent[] CreateActivityRetriesHistory(int performedAttempts, bool lastAttemptSucceeded)
+        private HistoryEvent[] CreateMultipleAttemptsHistory(
+            int performedAttempts,
+            bool lastAttemptSucceeded,
+            Func<int, string> getFailureReason,
+            string successOutput = null,
+            bool processed = false)
         {
             var result = new HistoryEvent[0];
 
-            for (var attempt = 0; attempt < performedAttempts; ++attempt)
+            for (var attempt = 1; attempt <= performedAttempts; ++attempt)
             {
-                var isLastAttempt = attempt == performedAttempts - 1;
-                var next = CreateActivityAttemptHistory(isLastAttempt && lastAttemptSucceeded);
+                var isLastAttempt = attempt == performedAttempts;
+
+                var next = CreateSingleAttemptHistory(
+                                succeeded: isLastAttempt && lastAttemptSucceeded,
+                                successOutput: successOutput,
+                                failureReason: getFailureReason(attempt),
+                                addTimerEvents: !isLastAttempt,
+                                processed: processed);
+
                 result = DurableTestUtilities.MergeHistories(result, next);
             }
 
             return result;
         }
 
-        private HistoryEvent[] CreateActivityAttemptHistory(bool succeeded)
+        private HistoryEvent[] CreateSingleAttemptHistory(
+            bool succeeded,
+            string successOutput = null,
+            string failureReason = null,
+            bool addTimerEvents = false,
+            bool processed = false)
         {
             var history = new List<HistoryEvent>();
 
@@ -87,7 +138,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     EventType = HistoryEventType.TaskScheduled,
                     EventId = taskScheduledEventId,
-                    Name = "dummy activity name"
+                    Name = "dummy activity name",
+                    IsProcessed = processed
                 });
 
             if (succeeded)
@@ -98,7 +150,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                         EventType = HistoryEventType.TaskCompleted,
                         EventId = -1,
                         TaskScheduledId = taskScheduledEventId,
-                        Result = "dummy result"
+                        Result = successOutput,
+                        IsProcessed = processed
                     });
             }
             else
@@ -109,8 +162,30 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                         EventType = HistoryEventType.TaskFailed,
                         EventId = -1,
                         TaskScheduledId = taskScheduledEventId,
-                        Reason = "dummy reason"
+                        Reason = failureReason,
+                        IsProcessed = processed
                     });
+
+                if (addTimerEvents)
+                {
+                    int timerCreatedEventId = GetUniqueEventId();
+                    history.Add(
+                        new HistoryEvent
+                        {
+                            EventType = HistoryEventType.TimerCreated,
+                            EventId = timerCreatedEventId,
+                            IsProcessed = processed
+                        });
+
+                    history.Add(
+                        new HistoryEvent
+                        {
+                            EventType = HistoryEventType.TimerFired,
+                            EventId = -1,
+                            TimerId = timerCreatedEventId,
+                            IsProcessed = processed
+                        });
+                }
             }
 
             return history.ToArray();

@@ -5,25 +5,59 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
+    using System;
     using System.Linq;
 
     internal class RetryHandler
     {
-        public static bool ShouldRetry(HistoryEvent[] orchestrationHistory, RetryOptions retryOptions)
+        public static bool ShouldRetry(
+            HistoryEvent[] history,
+            HistoryEvent firstTaskScheduledEvent,
+            RetryOptions retryOptions,
+            Action<object> output,
+            Action<string> onFailure)
         {
-            if (retryOptions == null)
-            {
-                return false;
-            }
+            var firstTaskScheduledEventIndex = FindEventIndex(history, firstTaskScheduledEvent);
 
-            var attempts = orchestrationHistory.Count(e => e.EventType == HistoryEventType.TaskFailed);
-
-            foreach (var historyEvent in orchestrationHistory)
+            var attempts = 0;
+            for (var i = firstTaskScheduledEventIndex; i < history.Length; ++i)
             {
-                historyEvent.IsProcessed = true;
+                var historyEvent = history[i];
+
+                switch (historyEvent.EventType)
+                {
+                    case HistoryEventType.TaskFailed:
+                        attempts++;
+                        if (attempts >= retryOptions.MaxNumberOfAttempts)
+                        {
+                            onFailure(historyEvent.Reason);
+                            return false;
+                        }
+                        break;
+
+                    case HistoryEventType.TaskCompleted:
+                        output(historyEvent.Result);
+                        return false;
+                }
             }
 
             return attempts < retryOptions.MaxNumberOfAttempts;
+        }
+
+        private static int FindEventIndex(HistoryEvent[] orchestrationHistory, HistoryEvent historyEvent)
+        {
+            var result = 0;
+            foreach (var e in orchestrationHistory)
+            {
+                if (ReferenceEquals(historyEvent, e))
+                {
+                    return result;
+                }
+
+                result++;
+            }
+            
+            return -1;
         }
     }
 }

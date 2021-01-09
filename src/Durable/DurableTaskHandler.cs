@@ -57,13 +57,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                             break;
 
                         case HistoryEventType.TaskFailed:
-                            if (RetryHandler.ShouldRetry(context.History, retryOptions))
+                            if (retryOptions == null)
                             {
-                                InitiateAndWaitForStop(context);
+                                onFailure(completedHistoryEvent.Reason);
                             }
                             else
                             {
-                                onFailure(completedHistoryEvent.Reason);
+                                bool shouldRetry = RetryHandler.ShouldRetry(
+                                                        context.History,
+                                                        scheduledHistoryEvent,
+                                                        retryOptions,
+                                                        output,
+                                                        onFailure);
+                                if (shouldRetry)
+                                {
+                                    InitiateAndWaitForStop(context);
+                                }
                             }
                             break;
                     }
