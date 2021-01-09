@@ -58,5 +58,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         // Internal used only
         public bool IsProcessed { get; set; }
+
+        public override string ToString()
+        {
+            return $"[{EventId}] {EventType} '{Name}' ({TaskScheduledId})";
+        }
     }
 }
