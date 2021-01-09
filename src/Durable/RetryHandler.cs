@@ -12,8 +12,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         public static bool ShouldRetry(
             HistoryEvent[] history,
+            int maxNumberOfAttempts,
+            Action<object> output,
+            Action<string> onFailure)
+        {
+            var firstUnprocessedTaskScheduledEvent =
+                history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
+
+            return ShouldRetry(history, firstUnprocessedTaskScheduledEvent, maxNumberOfAttempts, output, onFailure);
+        }
+
+        public static bool ShouldRetry(
+            HistoryEvent[] history,
             HistoryEvent firstTaskScheduledEvent,
-            RetryOptions retryOptions,
+            int maxNumberOfAttempts,
             Action<object> output,
             Action<string> onFailure)
         {
@@ -28,7 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 {
                     case HistoryEventType.TaskFailed:
                         attempts++;
-                        if (attempts >= retryOptions.MaxNumberOfAttempts)
+                        if (attempts >= maxNumberOfAttempts)
                         {
                             onFailure(historyEvent.Reason);
                             return false;
@@ -41,7 +53,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 }
             }
 
-            return attempts < retryOptions.MaxNumberOfAttempts;
+            return attempts < maxNumberOfAttempts;
         }
 
         private static int FindEventIndex(HistoryEvent[] orchestrationHistory, HistoryEvent historyEvent)

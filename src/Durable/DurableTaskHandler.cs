@@ -66,7 +66,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                                 bool shouldRetry = RetryHandler.ShouldRetry(
                                                         context.History,
                                                         scheduledHistoryEvent,
-                                                        retryOptions,
+                                                        retryOptions.MaxNumberOfAttempts,
                                                         output,
                                                         onFailure);
                                 if (shouldRetry)

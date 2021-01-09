@@ -19,14 +19,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void RetriesOnFirstFailureIfRetryOptionsAllow()
         {
             var history = CreateSingleAttemptHistory(succeeded: false);
-            var firstUnprocessedTaskScheduledEvent =
-                history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
-            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), 2, null, null, null);
 
             var shouldRetry = RetryHandler.ShouldRetry(
                 history,
-                firstUnprocessedTaskScheduledEvent,
-                retryOptions,
+                maxNumberOfAttempts: 2,
                 output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
                 onFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
 
@@ -40,16 +36,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         {
             const string FailureReason = "failure reason";
             var history = CreateSingleAttemptHistory(succeeded: false, failureReason: FailureReason);
-            var firstUnprocessedTaskScheduledEvent =
-                history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
-            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxNumberOfAttempts, null, null, null);
 
             string actualFailureReason = null;
 
             var shouldRetry = RetryHandler.ShouldRetry(
                 history,
-                firstUnprocessedTaskScheduledEvent,
-                retryOptions,
+                maxNumberOfAttempts,
                 output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
                 onFailure: reason =>
                             {
@@ -75,16 +67,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                             lastAttemptSucceeded: true,
                             successOutput: SuccessOutput,
                             getFailureReason: _ => "dummy failure reason");
-            var firstUnprocessedTaskScheduledEvent =
-                history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
-            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), maxNumberOfAttempts, null, null, null);
 
             object actualOutput = null;
 
             var shouldRetry = RetryHandler.ShouldRetry(
                 history,
-                firstUnprocessedTaskScheduledEvent,
-                retryOptions,
+                maxNumberOfAttempts,
                 output: obj =>
                         {
                             Assert.Null(actualOutput);
