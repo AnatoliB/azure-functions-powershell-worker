@@ -8,9 +8,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System;
     using System.Linq;
 
-    internal class RetryHandler
+    internal class RetryProcessor
     {
-        public static bool ShouldRetry(
+        public static bool Process(
             HistoryEvent[] history,
             int maxNumberOfAttempts,
             Action<object> output,
@@ -19,10 +19,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var firstUnprocessedTaskScheduledEvent =
                 history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
 
-            return ShouldRetry(history, firstUnprocessedTaskScheduledEvent, maxNumberOfAttempts, output, onFailure);
+            return Process(history, firstUnprocessedTaskScheduledEvent, maxNumberOfAttempts, output, onFailure);
         }
 
-        public static bool ShouldRetry(
+        public static bool Process(
             HistoryEvent[] history,
             HistoryEvent firstTaskScheduledEvent,
             int maxNumberOfAttempts,

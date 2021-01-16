@@ -63,7 +63,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                             }
                             else
                             {
-                                bool shouldRetry = RetryHandler.ShouldRetry(
+                                bool shouldRetry = RetryProcessor.Process(
                                                         context.History,
                                                         scheduledHistoryEvent,
                                                         retryOptions.MaxNumberOfAttempts,

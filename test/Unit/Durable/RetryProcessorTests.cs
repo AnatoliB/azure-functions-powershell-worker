@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Xunit;
 
-    public class RetryHandlerTests
+    public class RetryProcessorTests
     {
         private int _nextEventId = 1;
 
@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         {
             var history = CreateSingleAttemptHistory(succeeded: false);
 
-            var shouldRetry = RetryHandler.ShouldRetry(
+            var shouldRetry = RetryProcessor.Process(
                 history,
                 maxNumberOfAttempts: 2,
                 output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             string actualFailureReason = null;
 
-            var shouldRetry = RetryHandler.ShouldRetry(
+            var shouldRetry = RetryProcessor.Process(
                 history,
                 maxNumberOfAttempts,
                 output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             object actualOutput = null;
 
-            var shouldRetry = RetryHandler.ShouldRetry(
+            var shouldRetry = RetryProcessor.Process(
                 history,
                 maxNumberOfAttempts,
                 output: obj =>
