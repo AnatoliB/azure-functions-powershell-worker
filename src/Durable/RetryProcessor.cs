@@ -32,6 +32,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var firstTaskScheduledEventIndex = FindEventIndex(history, firstTaskScheduledEvent);
 
             var attempts = 0;
+            string firstFailureReason = null;
             for (var i = firstTaskScheduledEventIndex; i < history.Length; ++i)
             {
                 var historyEvent = history[i];
@@ -39,10 +40,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 switch (historyEvent.EventType)
                 {
                     case HistoryEventType.TaskFailed:
+                        firstFailureReason ??= historyEvent.Reason;
                         attempts++;
                         if (attempts >= maxNumberOfAttempts)
                         {
-                            onFailure(historyEvent.Reason);
+                            onFailure(firstFailureReason);
                             return false;
                         }
                         break;
