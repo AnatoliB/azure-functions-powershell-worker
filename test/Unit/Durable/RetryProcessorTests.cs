@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 history,
                 maxNumberOfAttempts,
                 onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
-                onFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
+                onFinalFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
 
             Assert.True(shouldRetry);
         }
@@ -51,7 +51,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 history,
                 maxNumberOfAttempts: performedAttempts,
                 onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
-                onFailure: reason =>
+                onFinalFailure: reason =>
                             {
                                 Assert.Null(actualFailureReason);
                                 actualFailureReason = reason;
@@ -89,7 +89,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                             Assert.Null(actualOutput);
                             actualOutput = obj;
                         },
-                onFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
+                onFinalFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
 
             Assert.False(shouldRetry);
             Assert.Equal(SuccessOutput, actualOutput);
