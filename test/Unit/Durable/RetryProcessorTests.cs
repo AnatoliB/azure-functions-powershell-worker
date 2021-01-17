@@ -187,7 +187,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(100, 99)]
         public void RetriesAfterFailureWhenNotReachedMaxNumberOfAttempts(int maxNumberOfAttempts, int performedAttempts)
         {
-            var history = CreateFailureHistory(maxNumberOfAttempts, performedAttempts, attempt => "failure reason");
+            var history = CreateFailureHistory(performedAttempts, attempt => "failure reason", replay: false);
 
             var shouldRetry = RetryProcessor.Process(
                 history,
@@ -198,17 +198,42 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.True(shouldRetry);
         }
 
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(3)]
+        [InlineData(100)]
+        public void ReportsFailureWhenReachedMaxNumberOfAttempts(int performedAttempts)
+        {
+            var history = CreateFailureHistory(performedAttempts, attempt => $"failure reason {attempt}", replay: false);
+
+            string actualFailureReason = null;
+
+            var shouldRetry = RetryProcessor.Process(
+                history,
+                maxNumberOfAttempts: performedAttempts,
+                output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
+                onFailure: reason =>
+                            {
+                                Assert.Null(actualFailureReason);
+                                actualFailureReason = reason;
+                            });
+
+            Assert.False(shouldRetry);
+            Assert.Equal("failure reason 1", actualFailureReason);
+        }
+
         private HistoryEvent[] CreateFailureHistory(
-            int maxNumberOfAttempts,
             int performedAttempts,
-            Func<int, string> getFailureReason)
+            Func<int, string> getFailureReason,
+            bool replay)
         {
             var result = new HistoryEvent[0];
 
             for (var attempt = 1; attempt <= performedAttempts; ++attempt)
             {
-                bool includeTimerEvents = performedAttempts == maxNumberOfAttempts
-                                          || attempt != performedAttempts;
+                bool isLastAttempt = attempt == performedAttempts;
+                bool includeTimerEvents = replay || !isLastAttempt;
 
                 var next = CreateSingleFailureHistory(includeTimerEvents, getFailureReason(attempt));
 
