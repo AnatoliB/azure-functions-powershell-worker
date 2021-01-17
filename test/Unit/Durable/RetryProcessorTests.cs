@@ -106,8 +106,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Func<int, string> getFailureReason,
             bool replay)
         {
-            var result = new HistoryEvent[0];
+            var preHistory = CreateIrrelevantHistory();
 
+            var relevantHistory = new HistoryEvent[0];
             for (var attempt = 1; attempt <= performedAttempts; ++attempt)
             {
                 bool isLastAttempt = attempt == performedAttempts;
@@ -115,10 +116,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
                 var next = CreateSingleFailureHistory(includeTimerEvents, getFailureReason(attempt));
 
-                result = DurableTestUtilities.MergeHistories(result, next);
+                relevantHistory = DurableTestUtilities.MergeHistories(relevantHistory, next);
             }
 
-            return Tuple.Create(result, 0, result.Length);
+            var history = DurableTestUtilities.MergeHistories(preHistory, relevantHistory);
+            return Tuple.Create(history, preHistory.Length, relevantHistory.Length);
         }
 
         private HistoryEvent[] CreateSingleFailureHistory(bool includeTimerEvents, string failureReason)
@@ -173,8 +175,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             string successOutput,
             bool replay)
         {
-            var result = new HistoryEvent[0];
+            var preHistory = CreateIrrelevantHistory();
 
+            var relevantHistory = new HistoryEvent[0];
             for (var attempt = 1; attempt <= performedAttempts; ++attempt)
             {
                 bool isLastAttempt = attempt == performedAttempts;
@@ -183,10 +186,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                                 ? CreateSingleSuccessHistory(successOutput)
                                 : CreateSingleFailureHistory(includeTimerEvents: true, "dummy failure reason");
 
-                result = DurableTestUtilities.MergeHistories(result, next);
+                relevantHistory = DurableTestUtilities.MergeHistories(relevantHistory, next);
             }
 
-            return Tuple.Create(result, 0, result.Length);
+            var history = DurableTestUtilities.MergeHistories(preHistory, relevantHistory);
+            return Tuple.Create(history, preHistory.Length, relevantHistory.Length);
         }
 
         private HistoryEvent[] CreateSingleSuccessHistory(string output)
@@ -213,6 +217,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                     };
 
             return history.ToArray();
+        }
+
+        private HistoryEvent[] CreateIrrelevantHistory()
+        {
+            var history = new HistoryEvent[0];
+            for (var i = 0; i < 5; ++i)
+            {
+                history = DurableTestUtilities.MergeHistories(
+                                history,
+                                CreateSingleFailureHistory(includeTimerEvents: true, "failure reason"));
+            }
+
+            return history;
         }
 
         private int GetUniqueEventId()
