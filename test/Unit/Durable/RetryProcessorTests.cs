@@ -179,6 +179,118 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             return history.ToArray();
         }
 
+        [Theory]
+        [InlineData(2, 1)]
+        [InlineData(3, 1)]
+        [InlineData(3, 2)]
+        [InlineData(100, 50)]
+        [InlineData(100, 99)]
+        public void RetriesAfterFailureWhenNotReachedMaxNumberOfAttempts(int maxNumberOfAttempts, int performedAttempts)
+        {
+            var history = CreateFailureHistory(maxNumberOfAttempts, performedAttempts, attempt => "failure reason");
+
+            var shouldRetry = RetryProcessor.Process(
+                history,
+                maxNumberOfAttempts,
+                output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
+                onFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
+
+            Assert.True(shouldRetry);
+        }
+
+        private HistoryEvent[] CreateFailureHistory(
+            int maxNumberOfAttempts,
+            int performedAttempts,
+            Func<int, string> getFailureReason)
+        {
+            var result = new HistoryEvent[0];
+
+            for (var attempt = 1; attempt <= performedAttempts; ++attempt)
+            {
+                bool includeTimerEvents = performedAttempts == maxNumberOfAttempts
+                                          || attempt != performedAttempts;
+
+                var next = CreateSingleFailureHistory(includeTimerEvents, getFailureReason(attempt));
+
+                result = DurableTestUtilities.MergeHistories(result, next);
+            }
+
+            return result;
+        }
+
+        private HistoryEvent[] CreateSingleSuccessHistory(string output)
+        {
+            var taskScheduledEventId = GetUniqueEventId();
+
+            var history =
+                new List<HistoryEvent>
+                    {
+                        new HistoryEvent
+                            {
+                                EventType = HistoryEventType.TaskScheduled,
+                                EventId = taskScheduledEventId,
+                                IsProcessed = false
+                            },
+                        new HistoryEvent
+                            {
+                                EventType = HistoryEventType.TaskCompleted,
+                                EventId = -1,
+                                TaskScheduledId = taskScheduledEventId,
+                                Result = output,
+                                IsProcessed = false
+                            }
+                    };
+
+            return history.ToArray();
+        }
+
+        private HistoryEvent[] CreateSingleFailureHistory(bool includeTimerEvents, string failureReason)
+        {
+            var taskScheduledEventId = GetUniqueEventId();
+
+            var history =
+                new List<HistoryEvent>
+                    {
+                        new HistoryEvent
+                            {
+                                EventType = HistoryEventType.TaskScheduled,
+                                EventId = taskScheduledEventId,
+                                IsProcessed = false
+                            },
+                        new HistoryEvent
+                            {
+                                EventType = HistoryEventType.TaskFailed,
+                                EventId = -1,
+                                TaskScheduledId = taskScheduledEventId,
+                                Reason = failureReason,
+                                IsProcessed = false
+                            }
+                    };
+
+            if (includeTimerEvents)
+            {
+                int timerCreatedEventId = GetUniqueEventId();
+                history.Add(
+                    new HistoryEvent
+                        {
+                            EventType = HistoryEventType.TimerCreated,
+                            EventId = timerCreatedEventId,
+                            IsProcessed = false
+                        });
+
+                history.Add(
+                    new HistoryEvent
+                        {
+                            EventType = HistoryEventType.TimerFired,
+                            EventId = -1,
+                            TimerId = timerCreatedEventId,
+                            IsProcessed = false
+                        });
+            }
+
+            return history.ToArray();
+        }
+
         private int GetUniqueEventId()
         {
             return _nextEventId++;
