@@ -13,20 +13,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public static bool Process(
             HistoryEvent[] history,
             int maxNumberOfAttempts,
-            Action<object> output,
+            Action<object> onSuccess,
             Action<string> onFailure)
         {
             var firstUnprocessedTaskScheduledEvent =
                 history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
 
-            return Process(history, firstUnprocessedTaskScheduledEvent, maxNumberOfAttempts, output, onFailure);
+            return Process(history, firstUnprocessedTaskScheduledEvent, maxNumberOfAttempts, onSuccess, onFailure);
         }
 
         public static bool Process(
             HistoryEvent[] history,
             HistoryEvent firstTaskScheduledEvent,
             int maxNumberOfAttempts,
-            Action<object> output,
+            Action<object> onSuccess,
             Action<string> onFailure)
         {
             var firstTaskScheduledEventIndex = FindEventIndex(history, firstTaskScheduledEvent);
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         break;
 
                     case HistoryEventType.TaskCompleted:
-                        output(historyEvent.Result);
+                        onSuccess(historyEvent.Result);
                         return false;
                 }
             }

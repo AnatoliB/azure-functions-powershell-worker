@@ -28,7 +28,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var shouldRetry = RetryProcessor.Process(
                 history,
                 maxNumberOfAttempts,
-                output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
+                onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
                 onFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
 
             Assert.True(shouldRetry);
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var shouldRetry = RetryProcessor.Process(
                 history,
                 maxNumberOfAttempts: performedAttempts,
-                output: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
+                onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
                 onFailure: reason =>
                             {
                                 Assert.Null(actualFailureReason);
@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var shouldRetry = RetryProcessor.Process(
                 history,
                 maxNumberOfAttempts,
-                output: obj =>
+                onSuccess: obj =>
                         {
                             Assert.Null(actualOutput);
                             actualOutput = obj;
