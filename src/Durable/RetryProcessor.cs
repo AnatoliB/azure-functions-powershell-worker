@@ -6,7 +6,6 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System;
-    using System.Linq;
 
     internal class RetryProcessor
     {
@@ -24,6 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             for (var i = firstTaskScheduledEventIndex; i < history.Length; ++i)
             {
                 var historyEvent = history[i];
+                historyEvent.IsProcessed = true;
 
                 switch (historyEvent.EventType)
                 {
@@ -32,6 +32,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         attempts++;
                         if (attempts >= maxNumberOfAttempts)
                         {
+                            if (i + 2 < history.Length)
+                            {
+                                history[i + 1].IsProcessed = true;
+                                history[i + 2].IsProcessed = true;
+                            }
                             onFinalFailure(firstFailureReason);
                             return false;
                         }

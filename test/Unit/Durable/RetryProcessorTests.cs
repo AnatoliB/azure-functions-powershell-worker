@@ -33,6 +33,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 onFinalFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
 
             Assert.True(shouldRetry);
+            AssertRelevantEventsProcessed(history, firstEventIndex, numberOfEvents);
         }
 
         [Theory]
@@ -61,6 +62,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             Assert.False(shouldRetry);
             Assert.Equal("failure reason 1", actualFailureReason);
+            AssertRelevantEventsProcessed(history, firstEventIndex, numberOfEvents);
         }
 
         [Theory]
@@ -96,6 +98,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             Assert.False(shouldRetry);
             Assert.Equal(SuccessOutput, actualOutput);
+            AssertRelevantEventsProcessed(history, firstEventIndex, numberOfEvents);
         }
 
         private Tuple<HistoryEvent[], int, int> CreateFailureHistory(
@@ -215,6 +218,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private int GetUniqueEventId()
         {
             return _nextEventId++;
+        }
+
+        private static void AssertRelevantEventsProcessed(HistoryEvent[] history, int firstEventIndex, int numberOfEvents)
+        {
+            Assert.True(history.Skip(firstEventIndex).Take(numberOfEvents).All(e => e.IsProcessed));
         }
     }
 }
