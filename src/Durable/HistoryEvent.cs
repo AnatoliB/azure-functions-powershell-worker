@@ -61,7 +61,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public override string ToString()
         {
-            return $"[{EventId}] {EventType} '{Name}' ({TaskScheduledId})";
+            var processedMarker = IsProcessed ? "X" : " ";
+            return $"[{EventId}] {EventType} '{Name}' ({TaskScheduledId}) [{processedMarker}]";
         }
     }
 }
