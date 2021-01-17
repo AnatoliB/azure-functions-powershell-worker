@@ -199,13 +199,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Theory]
-        [InlineData(1)]
-        [InlineData(2)]
-        [InlineData(3)]
-        [InlineData(100)]
-        public void ReportsFailureWhenReachedMaxNumberOfAttempts(int performedAttempts)
+        [InlineData(1, false)]
+        [InlineData(1, true)]
+        [InlineData(3, false)]
+        [InlineData(3, true)]
+        [InlineData(100, false)]
+        [InlineData(100, true)]
+        public void ReportsFailureWhenReachedMaxNumberOfAttempts(int performedAttempts, bool replay)
         {
-            var history = CreateFailureHistory(performedAttempts, attempt => $"failure reason {attempt}", replay: false);
+            var history = CreateFailureHistory(performedAttempts, attempt => $"failure reason {attempt}", replay);
 
             string actualFailureReason = null;
 
