@@ -119,7 +119,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 relevantHistory = DurableTestUtilities.MergeHistories(relevantHistory, next);
             }
 
-            var history = DurableTestUtilities.MergeHistories(preHistory, relevantHistory);
+            var postHistory = replay ? CreateIrrelevantHistory() : new HistoryEvent[0];
+
+            var history = DurableTestUtilities.MergeHistories(preHistory, relevantHistory, postHistory);
             return Tuple.Create(history, preHistory.Length, relevantHistory.Length);
         }
 
@@ -189,7 +191,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 relevantHistory = DurableTestUtilities.MergeHistories(relevantHistory, next);
             }
 
-            var history = DurableTestUtilities.MergeHistories(preHistory, relevantHistory);
+            var postHistory = replay ? CreateIrrelevantHistory() : new HistoryEvent[0];
+
+            var history = DurableTestUtilities.MergeHistories(preHistory, relevantHistory, postHistory);
             return Tuple.Create(history, preHistory.Length, relevantHistory.Length);
         }
 
