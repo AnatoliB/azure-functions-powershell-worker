@@ -23,10 +23,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(100, 99)]
         public void RetriesAfterFailureWhenNotReachedMaxNumberOfAttempts(int maxNumberOfAttempts, int performedAttempts)
         {
-            var history = CreateFailureHistory(performedAttempts, attempt => "failure reason", replay: false);
+            var (history, firstEventIndex, numberOfEvents) = CreateFailureHistory(performedAttempts, attempt => "failure reason", replay: false);
 
             var shouldRetry = RetryProcessor.Process(
                 history,
+                history[firstEventIndex],
                 maxNumberOfAttempts,
                 onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
                 onFinalFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
@@ -43,12 +44,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(100, true)]
         public void ReportsFailureWhenReachedMaxNumberOfAttempts(int performedAttempts, bool replay)
         {
-            var history = CreateFailureHistory(performedAttempts, attempt => $"failure reason {attempt}", replay);
+            var (history, firstEventIndex, numberOfEvents) = CreateFailureHistory(performedAttempts, attempt => $"failure reason {attempt}", replay);
 
             string actualFailureReason = null;
 
             var shouldRetry = RetryProcessor.Process(
                 history,
+                history[firstEventIndex],
                 maxNumberOfAttempts: performedAttempts,
                 onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
                 onFinalFailure: reason =>
@@ -77,12 +79,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void OutputsResultOnSuccess(int maxNumberOfAttempts, int performedAttempts, bool replay)
         {
             const string SuccessOutput = "success output";
-            var history = CreateSuccessHistory(performedAttempts, SuccessOutput, replay);
+            var (history, firstEventIndex, numberOfEvents) = CreateSuccessHistory(performedAttempts, SuccessOutput, replay);
 
             object actualOutput = null;
 
             var shouldRetry = RetryProcessor.Process(
                 history,
+                history[firstEventIndex],
                 maxNumberOfAttempts,
                 onSuccess: obj =>
                         {
@@ -95,7 +98,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Equal(SuccessOutput, actualOutput);
         }
 
-        private HistoryEvent[] CreateFailureHistory(
+        private Tuple<HistoryEvent[], int, int> CreateFailureHistory(
             int performedAttempts,
             Func<int, string> getFailureReason,
             bool replay)
@@ -112,7 +115,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 result = DurableTestUtilities.MergeHistories(result, next);
             }
 
-            return result;
+            return Tuple.Create(result, 0, result.Length);
         }
 
         private HistoryEvent[] CreateSingleFailureHistory(bool includeTimerEvents, string failureReason)
@@ -162,7 +165,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             return history.ToArray();
         }
 
-        private HistoryEvent[] CreateSuccessHistory(
+        private Tuple<HistoryEvent[], int, int> CreateSuccessHistory(
             int performedAttempts,
             string successOutput,
             bool replay)
@@ -180,7 +183,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 result = DurableTestUtilities.MergeHistories(result, next);
             }
 
-            return result;
+            return Tuple.Create(result, 0, result.Length);
         }
 
         private HistoryEvent[] CreateSingleSuccessHistory(string output)

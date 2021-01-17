@@ -12,18 +12,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         public static bool Process(
             HistoryEvent[] history,
-            int maxNumberOfAttempts,
-            Action<object> onSuccess,
-            Action<string> onFinalFailure)
-        {
-            var firstUnprocessedTaskScheduledEvent =
-                history.First(e => !e.IsProcessed && e.EventType == HistoryEventType.TaskScheduled);
-
-            return Process(history, firstUnprocessedTaskScheduledEvent, maxNumberOfAttempts, onSuccess, onFinalFailure);
-        }
-
-        public static bool Process(
-            HistoryEvent[] history,
             HistoryEvent firstTaskScheduledEvent,
             int maxNumberOfAttempts,
             Action<object> onSuccess,
