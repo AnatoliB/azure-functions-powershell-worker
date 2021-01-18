@@ -68,22 +68,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         private readonly HistoryEvent[] InterleavingHistory = new[]
         {
-            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 1 },                                        // A
-            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 2 },                                        // B
-            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 3 },                                        // C
-            new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "A1" },   // A
-            new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 4 },                                        // A
-            new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 2, Reason = "B1" },   // B
-            new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 5 },                                        // B
-            new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 4 },                          // A
-            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 6 },                                        // A
-            new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 5 },                          // B
-            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 7 },                                        // B
-            new HistoryEvent { EventType = HistoryEventType.TaskCompleted, EventId = -1, TaskScheduledId = 6, Result = "OK" },   // A
-            new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 7, Reason = "B2" },   // B
-            new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 8 },                                        // B
-            new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 8 },                          // B
-            new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 3, Reason = "C1" },   // C
+            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 1 },                                        //  0: A
+            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 2 },                                        //  1: B
+            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 3 },                                        //  2: C
+            new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "A1" },   //  3: A
+            new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 4 },                                        //  4: A
+            new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 2, Reason = "B1" },   //  5: B
+            new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 5 },                                        //  6: B
+            new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 4 },                          //  7: A
+            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 6 },                                        //  8: A
+            new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 5 },                          //  9: B
+            new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 7 },                                        // 10: B
+            new HistoryEvent { EventType = HistoryEventType.TaskCompleted, EventId = -1, TaskScheduledId = 6, Result = "OK" },   // 11: A
+            new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 7, Reason = "B2" },   // 12: B
+            new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 8 },                                        // 13: B
+            new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 8 },                          // 14: B
+            new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 3, Reason = "C1" },   // 15: C
         };
 
         [Fact]
