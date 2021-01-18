@@ -66,6 +66,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             AssertRelevantEventsProcessed(history, firstEventIndex, numberOfEvents);
         }
 
+        [Fact]
+        public void HandlesInterleavingRetries()
+        {
+            var history = new[]
+            {
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 1 },                                        // A
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 2 },                                        // B
+                new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "A1" },   // A
+                new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 3 },                                        // A
+                new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 2, Reason = "B1" },   // B
+                new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 4 },                                        // B
+                new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 3 },                          // A
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 5 },                                        // A
+                new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 4 },                          // B
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 6 },                                        // B
+                new HistoryEvent { EventType = HistoryEventType.TaskCompleted, EventId = -1, TaskScheduledId = 5, Result = "OK" },   // A
+                new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 6, Reason = "B2" },   // B
+                new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 7 },                                        // B
+                new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 7 }                           // B
+            };
+
+            AssertRetryProcessorReportsFailure(history, firstEventIndex: 0, maxNumberOfAttempts: 2, "A1");
+            AssertRetryProcessorReportsSuccess(history, firstEventIndex: 1, maxNumberOfAttempts: 2, "OK");
+        }
+
         private Tuple<HistoryEvent[], int, int> CreateFailureHistory(
             int performedAttempts,
             Func<int, string> getFailureReason,
