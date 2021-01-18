@@ -25,14 +25,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         {
             var (history, firstEventIndex, numberOfEvents) = CreateFailureHistory(performedAttempts, attempt => "failure reason", replay: false);
 
-            var shouldRetry = RetryProcessor.Process(
-                history,
-                history[firstEventIndex],
-                maxNumberOfAttempts,
-                onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
-                onFinalFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
-
-            Assert.True(shouldRetry);
+            AssertRetryProcessorReportsRetry(history, firstEventIndex, maxNumberOfAttempts);
             AssertRelevantEventsProcessed(history, firstEventIndex, numberOfEvents);
         }
 
@@ -211,6 +204,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private int GetUniqueEventId()
         {
             return _nextEventId++;
+        }
+
+        private static void AssertRetryProcessorReportsRetry(HistoryEvent[] history, int firstEventIndex, int maxNumberOfAttempts)
+        {
+            var shouldRetry = RetryProcessor.Process(
+                history,
+                history[firstEventIndex],
+                maxNumberOfAttempts,
+                onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
+                onFinalFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
+
+            Assert.True(shouldRetry);
         }
 
         private static void AssertRetryProcessorReportsFailure(HistoryEvent[] history, int firstEventIndex, int maxNumberOfAttempts, string ExpectedFailureReason)
