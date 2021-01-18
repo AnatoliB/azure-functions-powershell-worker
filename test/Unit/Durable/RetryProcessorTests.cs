@@ -243,7 +243,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         private static void AssertRelevantEventsProcessed(HistoryEvent[] history, int firstEventIndex, int numberOfEvents)
         {
-            Assert.True(history.Skip(firstEventIndex).Take(numberOfEvents).All(e => e.IsProcessed));
+            // Expect all the relevant events to be processed
+            AssertEventsProcessed(history, firstEventIndex, numberOfEvents, expectedProcessed: true);
+
+            // Expect all the subsequent events NOT to be processed
+            var firstIrrelevantEventIndex = firstEventIndex + numberOfEvents;
+            var numberOfIrrelevantEvents = history.Length - firstIrrelevantEventIndex;
+            AssertEventsProcessed(history, firstIrrelevantEventIndex, numberOfIrrelevantEvents, expectedProcessed: false);
+        }
+
+        private static void AssertEventsProcessed(HistoryEvent[] history, int firstEventIndex, int numberOfEvents, bool expectedProcessed)
+        {
+            Assert.True(history.Skip(firstEventIndex).Take(numberOfEvents).All(e => e.IsProcessed == expectedProcessed));
         }
     }
 }
