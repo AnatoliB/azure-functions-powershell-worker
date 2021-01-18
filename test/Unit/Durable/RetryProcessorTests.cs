@@ -66,6 +66,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             AssertRelevantEventsProcessed(history, firstEventIndex, numberOfEvents);
         }
 
+        // Activity A failed on the first attempt and succeeded on the second attempt.
+        // Activity B failed on two attempts.
+        // Activity C failed on the first attempt and has not been retried yet.
         private static HistoryEvent[] CreateInterleavingHistory()
         {
             return new[]
@@ -90,24 +93,33 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Fact]
-        public void InterleavingRetries_RequestsRetry()
+        public void InterleavingRetries_ReportsSuccess()
         {
             var history = CreateInterleavingHistory();
-            AssertRetryProcessorReportsRetry(history, firstEventIndex: 2, maxNumberOfAttempts: 2);
+
+            // Activity A
+            AssertRetryProcessorReportsFailure(history, firstEventIndex: 0, maxNumberOfAttempts: 2, "A1");
+            AssertEventsProcessed(history, 0, 3, 4, 7, 8, 11);
         }
 
         [Fact]
         public void InterleavingRetries_ReportsFailure()
         {
             var history = CreateInterleavingHistory();
-            AssertRetryProcessorReportsFailure(history, firstEventIndex: 0, maxNumberOfAttempts: 2, "A1");
+
+            // Activity B
+            AssertRetryProcessorReportsSuccess(history, firstEventIndex: 1, maxNumberOfAttempts: 2, "OK");
+            AssertEventsProcessed(history, 1, 5, 6, 9, 10, 12, 13, 14);
         }
 
         [Fact]
-        public void InterleavingRetries_ReportsSuccess()
+        public void InterleavingRetries_RequestsRetry()
         {
             var history = CreateInterleavingHistory();
-            AssertRetryProcessorReportsSuccess(history, firstEventIndex: 1, maxNumberOfAttempts: 2, "OK");
+
+            // Activity C
+            AssertRetryProcessorReportsRetry(history, firstEventIndex: 2, maxNumberOfAttempts: 2);
+            AssertEventsProcessed(history, 2, 15);
         }
 
         private Tuple<HistoryEvent[], int, int> CreateFailureHistory(
@@ -300,18 +312,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Equal(expectedOutput, actualOutput);
         }
 
+        private void AssertEventsProcessed(HistoryEvent[] history, params int[] expectedProcessedIndexes)
+        {
+            for (var i = 0; i < history.Length; ++i)
+            {
+                var expectedProcessed = expectedProcessedIndexes.Contains(i);
+                Assert.Equal(expectedProcessed, history[i].IsProcessed);
+            }
+        }
+
         private static void AssertRelevantEventsProcessed(HistoryEvent[] history, int firstEventIndex, int numberOfEvents)
         {
             // Expect all the relevant events to be processed
-            AssertEventsProcessed(history, firstEventIndex, numberOfEvents, expectedProcessed: true);
+            AssertEventsProcessedRange(history, firstEventIndex, numberOfEvents, expectedProcessed: true);
 
             // Expect all the subsequent events NOT to be processed
             var firstIrrelevantEventIndex = firstEventIndex + numberOfEvents;
             var numberOfIrrelevantEvents = history.Length - firstIrrelevantEventIndex;
-            AssertEventsProcessed(history, firstIrrelevantEventIndex, numberOfIrrelevantEvents, expectedProcessed: false);
+            AssertEventsProcessedRange(history, firstIrrelevantEventIndex, numberOfIrrelevantEvents, expectedProcessed: false);
         }
 
-        private static void AssertEventsProcessed(HistoryEvent[] history, int firstEventIndex, int numberOfEvents, bool expectedProcessed)
+        private static void AssertEventsProcessedRange(HistoryEvent[] history, int firstEventIndex, int numberOfEvents, bool expectedProcessed)
         {
             Assert.True(history.Skip(firstEventIndex).Take(numberOfEvents).All(e => e.IsProcessed == expectedProcessed));
         }
