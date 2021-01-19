@@ -61,8 +61,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public override string ToString()
         {
+            var relatedEventId = EventType == HistoryEventType.TimerFired ? TimerId : TaskScheduledId;
             var processedMarker = IsProcessed ? "X" : " ";
-            return $"[{EventId}] {EventType} '{Name}' ({TaskScheduledId}) [{processedMarker}]";
+            return $"[{EventId}] {EventType} '{Name}' ({relatedEventId}) [{processedMarker}]";
         }
     }
 }
