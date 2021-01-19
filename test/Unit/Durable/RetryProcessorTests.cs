@@ -6,15 +6,12 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 {
     using System;
-    using System.Collections.Generic;
     using System.Linq;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Xunit;
 
     public class RetryProcessorTests
     {
-        private int _nextEventId = 1;
-
         [Fact]
         public void RetriesAfterFirstFailure()
         {
@@ -81,54 +78,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.True(history.All(e => e.IsProcessed));
         }
 
-        [Theory]
-        [InlineData(2, 1)]
-        [InlineData(3, 1)]
-        [InlineData(3, 2)]
-        [InlineData(100, 50)]
-        [InlineData(100, 99)]
-        public void RetriesAfterFailureWhenNotReachedMaxNumberOfAttempts(int maxNumberOfAttempts, int performedAttempts)
-        {
-            var (history, firstEventIndex, numberOfEvents) = CreateFailureHistory(performedAttempts, attempt => "failure reason", replay: false);
-
-            AssertRetryProcessorReportsRetry(history, firstEventIndex, maxNumberOfAttempts);
-            AssertRelevantEventsProcessed(history, firstEventIndex, numberOfEvents - 2); // Exclude the last Scheduled/Failed pair
-        }
-
-        [Theory]
-        [InlineData(1)]
-        [InlineData(3)]
-        [InlineData(100)]
-        public void ReportsFailureWhenReachedMaxNumberOfAttempts(int performedAttempts)
-        {
-            var (history, firstEventIndex, numberOfEvents) = CreateFailureHistory(performedAttempts, attempt => $"failure reason {attempt}", replay: true);
-
-            AssertRetryProcessorReportsFailure(history, firstEventIndex, performedAttempts, $"failure reason {performedAttempts}");
-            AssertRelevantEventsProcessed(history, firstEventIndex, numberOfEvents);
-        }
-
-        [Theory]
-        [InlineData(1, 1, false)]
-        [InlineData(1, 1, true)]
-        [InlineData(3, 1, false)]
-        [InlineData(3, 1, true)]
-        [InlineData(3, 2, false)]
-        [InlineData(3, 2, true)]
-        [InlineData(3, 3, false)]
-        [InlineData(3, 3, true)]
-        [InlineData(100, 50, false)]
-        [InlineData(100, 50, true)]
-        [InlineData(100, 100, false)]
-        [InlineData(100, 100, true)]
-        public void OutputsResultOnSuccess(int maxNumberOfAttempts, int performedAttempts, bool replay)
-        {
-            const string SuccessOutput = "success output";
-            var (history, firstEventIndex, numberOfEvents) = CreateSuccessHistory(performedAttempts, SuccessOutput, replay);
-
-            AssertRetryProcessorReportsSuccess(history, firstEventIndex, maxNumberOfAttempts, SuccessOutput);
-            AssertRelevantEventsProcessed(history, firstEventIndex, numberOfEvents);
-        }
-
         // Activity A failed on the first attempt and succeeded on the second attempt.
         // Activity B failed on two attempts.
         // Activity C failed on the first attempt and has not been retried yet.
@@ -183,146 +132,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             // Activity C
             AssertRetryProcessorReportsRetry(history, firstEventIndex: 2, maxNumberOfAttempts: 2);
             AssertEventsProcessed(history); // Expect NO events to be processed
-        }
-
-        private Tuple<HistoryEvent[], int, int> CreateFailureHistory(
-            int performedAttempts,
-            Func<int, string> getFailureReason,
-            bool replay)
-        {
-            var preHistory = CreateIrrelevantHistory();
-
-            var relevantHistory = new HistoryEvent[0];
-            for (var attempt = 1; attempt <= performedAttempts; ++attempt)
-            {
-                bool isLastAttempt = attempt == performedAttempts;
-                bool includeTimerEvents = replay || !isLastAttempt;
-
-                var next = CreateSingleFailureHistory(includeTimerEvents, getFailureReason(attempt));
-
-                relevantHistory = DurableTestUtilities.MergeHistories(relevantHistory, next);
-            }
-
-            var postHistory = replay ? CreateIrrelevantHistory() : new HistoryEvent[0];
-
-            var history = DurableTestUtilities.MergeHistories(preHistory, relevantHistory, postHistory);
-            return Tuple.Create(history, preHistory.Length, relevantHistory.Length);
-        }
-
-        private HistoryEvent[] CreateSingleFailureHistory(bool includeTimerEvents, string failureReason)
-        {
-            var taskScheduledEventId = GetUniqueEventId();
-
-            var history =
-                new List<HistoryEvent>
-                    {
-                        new HistoryEvent
-                            {
-                                EventType = HistoryEventType.TaskScheduled,
-                                EventId = taskScheduledEventId,
-                                IsProcessed = false
-                            },
-                        new HistoryEvent
-                            {
-                                EventType = HistoryEventType.TaskFailed,
-                                EventId = -1,
-                                TaskScheduledId = taskScheduledEventId,
-                                Reason = failureReason,
-                                IsProcessed = false
-                            }
-                    };
-
-            if (includeTimerEvents)
-            {
-                int timerCreatedEventId = GetUniqueEventId();
-                history.Add(
-                    new HistoryEvent
-                        {
-                            EventType = HistoryEventType.TimerCreated,
-                            EventId = timerCreatedEventId,
-                            IsProcessed = false
-                        });
-
-                history.Add(
-                    new HistoryEvent
-                        {
-                            EventType = HistoryEventType.TimerFired,
-                            EventId = -1,
-                            TimerId = timerCreatedEventId,
-                            IsProcessed = false
-                        });
-            }
-
-            return history.ToArray();
-        }
-
-        private Tuple<HistoryEvent[], int, int> CreateSuccessHistory(
-            int performedAttempts,
-            string successOutput,
-            bool replay)
-        {
-            var preHistory = CreateIrrelevantHistory();
-
-            var relevantHistory = new HistoryEvent[0];
-            for (var attempt = 1; attempt <= performedAttempts; ++attempt)
-            {
-                bool isLastAttempt = attempt == performedAttempts;
-
-                var next = isLastAttempt
-                                ? CreateSingleSuccessHistory(successOutput)
-                                : CreateSingleFailureHistory(includeTimerEvents: true, "dummy failure reason");
-
-                relevantHistory = DurableTestUtilities.MergeHistories(relevantHistory, next);
-            }
-
-            var postHistory = replay ? CreateIrrelevantHistory() : new HistoryEvent[0];
-
-            var history = DurableTestUtilities.MergeHistories(preHistory, relevantHistory, postHistory);
-            return Tuple.Create(history, preHistory.Length, relevantHistory.Length);
-        }
-
-        private HistoryEvent[] CreateSingleSuccessHistory(string output)
-        {
-            var taskScheduledEventId = GetUniqueEventId();
-
-            var history =
-                new List<HistoryEvent>
-                    {
-                        new HistoryEvent
-                            {
-                                EventType = HistoryEventType.TaskScheduled,
-                                EventId = taskScheduledEventId,
-                                IsProcessed = false
-                            },
-                        new HistoryEvent
-                            {
-                                EventType = HistoryEventType.TaskCompleted,
-                                EventId = -1,
-                                TaskScheduledId = taskScheduledEventId,
-                                Result = output,
-                                IsProcessed = false
-                            }
-                    };
-
-            return history.ToArray();
-        }
-
-        private HistoryEvent[] CreateIrrelevantHistory()
-        {
-            var history = new HistoryEvent[0];
-            for (var i = 0; i < 5; ++i)
-            {
-                history = DurableTestUtilities.MergeHistories(
-                                history,
-                                CreateSingleFailureHistory(includeTimerEvents: true, "failure reason"));
-            }
-
-            return history;
-        }
-
-        private int GetUniqueEventId()
-        {
-            return _nextEventId++;
         }
 
         private static void AssertRetryProcessorReportsRetry(HistoryEvent[] history, int firstEventIndex, int maxNumberOfAttempts)
