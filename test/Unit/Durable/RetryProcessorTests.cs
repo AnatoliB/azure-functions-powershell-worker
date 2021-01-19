@@ -21,11 +21,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var history = new[]
             {
                 new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 1 },
-                new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "A1" }
+                new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "Failure 1" }
             };
 
-            AssertRetryProcessorReportsRetry(history, firstEventIndex: 0, maxNumberOfAttempts: 2);
-            Assert.True(history.All(e => !e.IsProcessed));
+            AssertRetryProcessorReportsRetry(history, firstEventIndex: 0, maxNumberOfAttempts: 3);
+            AssertNoEventsProcessed(history);
+        }
+
+        [Fact]
+        public void RetriesAfterSecondFailure()
+        {
+            var history = new[]
+            {
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 1 },
+                new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "Failure 1" },
+                new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 2 },
+                new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 2 },
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 3 },
+                new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 3, Reason = "Failure 2" },
+            };
+
+            AssertRetryProcessorReportsRetry(history, firstEventIndex: 0, maxNumberOfAttempts: 3);
+            AssertEventsProcessed(history, 0, 1, 2, 3);
         }
 
         [Fact]
@@ -358,13 +375,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Equal(expectedOutput, actualOutput);
         }
 
-        private void AssertEventsProcessed(HistoryEvent[] history, params int[] expectedProcessedIndexes)
+        private static void AssertEventsProcessed(HistoryEvent[] history, params int[] expectedProcessedIndexes)
         {
             for (var i = 0; i < history.Length; ++i)
             {
                 var expectedProcessed = expectedProcessedIndexes.Contains(i);
                 Assert.Equal(expectedProcessed, history[i].IsProcessed);
             }
+        }
+
+        private static void AssertNoEventsProcessed(HistoryEvent[] history)
+        {
+            AssertEventsProcessed(history); // Note: passing nothing to expectedProcessedIndexes
         }
 
         private static void AssertRelevantEventsProcessed(HistoryEvent[] history, int firstEventIndex, int numberOfEvents)
