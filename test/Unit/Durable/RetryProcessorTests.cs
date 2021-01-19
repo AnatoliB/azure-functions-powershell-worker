@@ -131,7 +131,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             // Activity C
             AssertRetryProcessorReportsRetry(history, firstEventIndex: 2, maxNumberOfAttempts: 2);
-            AssertEventsProcessed(history); // Expect NO events to be processed
+            AssertNoEventsProcessed(history);
         }
 
         private static void AssertRetryProcessorReportsRetry(HistoryEvent[] history, int firstEventIndex, int maxNumberOfAttempts)
