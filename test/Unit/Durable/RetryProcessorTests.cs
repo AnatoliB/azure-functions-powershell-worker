@@ -34,6 +34,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "Failure 1" },
                 new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 2 },
                 new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 2 },
+
                 new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 3 },
                 new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 3, Reason = "Failure 2" },
             };
@@ -51,6 +52,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "Failure 1" },
                 new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 2 },
                 new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 2 },
+
                 new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 3 },
                 new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 3, Reason = "Failure 2" },
                 new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 4 },
@@ -201,22 +203,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private static void AssertNoEventsProcessed(HistoryEvent[] history)
         {
             AssertEventsProcessed(history); // Note: passing nothing to expectedProcessedIndexes
-        }
-
-        private static void AssertRelevantEventsProcessed(HistoryEvent[] history, int firstEventIndex, int numberOfEvents)
-        {
-            // Expect all the relevant events to be processed
-            AssertEventsRangeProcessed(history, firstEventIndex, numberOfEvents, expectedProcessed: true);
-
-            // Expect all the subsequent events NOT to be processed
-            var firstIrrelevantEventIndex = firstEventIndex + numberOfEvents;
-            var numberOfIrrelevantEvents = history.Length - firstIrrelevantEventIndex;
-            AssertEventsRangeProcessed(history, firstIrrelevantEventIndex, numberOfIrrelevantEvents, expectedProcessed: false);
-        }
-
-        private static void AssertEventsRangeProcessed(HistoryEvent[] history, int firstEventIndex, int numberOfEvents, bool expectedProcessed)
-        {
-            Assert.True(history.Skip(firstEventIndex).Take(numberOfEvents).All(e => e.IsProcessed == expectedProcessed));
         }
     }
 }
