@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             };
 
             AssertRetryProcessorReportsContinue(history, firstEventIndex: 0, maxNumberOfAttempts: 2);
-            AssertEventsProcessed(history, 0, 1, 2, 3);
+            AssertEventsProcessed(history, 0, 1, 2, 3); // Don't expect the last Scheduled/Failed pair to be processed
         }
 
         [Fact]
@@ -72,12 +72,41 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "Failure 1" },
                 new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 2 },
                 new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 2 },
+
                 new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 3 },
                 new HistoryEvent { EventType = HistoryEventType.TaskCompleted, EventId = -1, TaskScheduledId = 3, Result = "Success" },
             };
 
             AssertRetryProcessorReportsSuccess(history, firstEventIndex: 0, maxNumberOfAttempts: 2, "Success");
             AssertAllEventsProcessed(history);
+        }
+
+        [Fact]
+        public void IgnoresPreviousHistory()
+        {
+            var history = new[]
+            {
+                // From a previous activity invocation
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 1 },
+                new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "Failure 1" },
+                new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 2 },
+                new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 2 },
+
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 3 },
+                new HistoryEvent { EventType = HistoryEventType.TaskCompleted, EventId = -1, TaskScheduledId = 3, Result = "Success 1" },
+
+                // The current invocation starts here:
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 4 },
+                new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 4, Reason = "Failure 2" },
+                new HistoryEvent { EventType = HistoryEventType.TimerCreated,  EventId = 5 },
+                new HistoryEvent { EventType = HistoryEventType.TimerFired,    EventId = -1, TimerId = 5 },
+
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 6 },
+                new HistoryEvent { EventType = HistoryEventType.TaskCompleted, EventId = -1, TaskScheduledId = 6, Result = "Success 2" },
+            };
+
+            AssertRetryProcessorReportsSuccess(history, firstEventIndex: 6, maxNumberOfAttempts: 2, "Success 2");
+            AssertEventsProcessed(history, 6, 7, 8, 9, 10, 11);
         }
 
         // Activity A failed on the first attempt and succeeded on the second attempt.
