@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     public class RetryProcessorTests
     {
         [Fact]
-        public void RetriesAfterFirstFailure()
+        public void ContinuesAfterFirstFailure()
         {
             var history = new[]
             {
@@ -21,12 +21,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "Failure 1" }
             };
 
-            AssertRetryProcessorReportsRetry(history, firstEventIndex: 0, maxNumberOfAttempts: 3);
+            AssertRetryProcessorReportsRetry(history, firstEventIndex: 0, maxNumberOfAttempts: 2);
             AssertNoEventsProcessed(history);
         }
 
         [Fact]
-        public void RetriesAfterSecondFailure()
+        public void ContinuesAfterSecondFailure()
         {
             var history = new[]
             {
@@ -38,12 +38,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 3, Reason = "Failure 2" },
             };
 
-            AssertRetryProcessorReportsRetry(history, firstEventIndex: 0, maxNumberOfAttempts: 3);
+            AssertRetryProcessorReportsRetry(history, firstEventIndex: 0, maxNumberOfAttempts: 2);
             AssertEventsProcessed(history, 0, 1, 2, 3);
         }
 
         [Fact]
-        public void FailsWhenMaxNumberOfAttempts()
+        public void FailsOnMaxNumberOfAttempts()
         {
             var history = new[]
             {
@@ -58,7 +58,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             };
 
             AssertRetryProcessorReportsFailure(history, firstEventIndex: 0, maxNumberOfAttempts: 2, "Failure 2");
-            Assert.True(history.All(e => e.IsProcessed));
+            AssertAllEventsProcessed(history);
         }
 
         [Fact]
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             };
 
             AssertRetryProcessorReportsSuccess(history, firstEventIndex: 0, maxNumberOfAttempts: 2, "Success");
-            Assert.True(history.All(e => e.IsProcessed));
+            AssertAllEventsProcessed(history);
         }
 
         // Activity A failed on the first attempt and succeeded on the second attempt.
@@ -191,6 +191,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 var expectedProcessed = expectedProcessedIndexes.Contains(i);
                 Assert.Equal(expectedProcessed, history[i].IsProcessed);
             }
+        }
+
+        private static void AssertAllEventsProcessed(HistoryEvent[] history)
+        {
+            Assert.True(history.All(e => e.IsProcessed));
         }
 
         private static void AssertNoEventsProcessed(HistoryEvent[] history)
