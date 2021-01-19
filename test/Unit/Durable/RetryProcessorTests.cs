@@ -21,7 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 1, Reason = "Failure 1" }
             };
 
-            AssertRetryProcessorReportsRetry(history, firstEventIndex: 0, maxNumberOfAttempts: 2);
+            AssertRetryProcessorReportsContinue(history, firstEventIndex: 0, maxNumberOfAttempts: 2);
             AssertNoEventsProcessed(history);
         }
 
@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 new HistoryEvent { EventType = HistoryEventType.TaskFailed,    EventId = -1, TaskScheduledId = 3, Reason = "Failure 2" },
             };
 
-            AssertRetryProcessorReportsRetry(history, firstEventIndex: 0, maxNumberOfAttempts: 2);
+            AssertRetryProcessorReportsContinue(history, firstEventIndex: 0, maxNumberOfAttempts: 2);
             AssertEventsProcessed(history, 0, 1, 2, 3);
         }
 
@@ -125,16 +125,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Fact]
-        public void InterleavingRetries_RequestsRetry()
+        public void InterleavingRetries_ReportsContinue()
         {
             var history = CreateInterleavingHistory();
 
             // Activity C
-            AssertRetryProcessorReportsRetry(history, firstEventIndex: 2, maxNumberOfAttempts: 2);
+            AssertRetryProcessorReportsContinue(history, firstEventIndex: 2, maxNumberOfAttempts: 2);
             AssertNoEventsProcessed(history);
         }
 
-        private static void AssertRetryProcessorReportsRetry(HistoryEvent[] history, int firstEventIndex, int maxNumberOfAttempts)
+        private static void AssertRetryProcessorReportsContinue(HistoryEvent[] history, int firstEventIndex, int maxNumberOfAttempts)
         {
             var shouldRetry = RetryProcessor.Process(
                 history,

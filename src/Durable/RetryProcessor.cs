@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     internal class RetryProcessor
     {
+        // Returns true to indicate that processing this activity invocation should continue.
         public static bool Process(
             HistoryEvent[] history,
             HistoryEvent firstTaskScheduledEvent,
