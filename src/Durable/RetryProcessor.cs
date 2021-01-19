@@ -18,37 +18,95 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var firstTaskScheduledEventIndex = FindEventIndex(history, firstTaskScheduledEvent);
 
-            var attempts = 0;
-            string firstFailureReason = null;
-            for (var i = firstTaskScheduledEventIndex; i < history.Length; ++i)
+            var attempt = 1;
+            HistoryEvent taskScheduled = null;
+            HistoryEvent taskFailed = null;
+            HistoryEvent taskRetryTimer = null;
+            for (var i = firstTaskScheduledEventIndex; i < history.Length; i++)
             {
                 var historyEvent = history[i];
-                historyEvent.IsProcessed = true;
-
-                switch (historyEvent.EventType)
+                if (historyEvent.IsProcessed)
                 {
-                    case HistoryEventType.TaskFailed:
-                        firstFailureReason ??= historyEvent.Reason;
-                        attempts++;
-                        if (attempts >= maxNumberOfAttempts)
-                        {
-                            if (i + 2 < history.Length)
-                            {
-                                history[i + 1].IsProcessed = true;
-                                history[i + 2].IsProcessed = true;
-                            }
-                            onFinalFailure(firstFailureReason);
-                            return false;
-                        }
-                        break;
+                    continue;
+                }
 
-                    case HistoryEventType.TaskCompleted:
+                if (taskScheduled == null)
+                {
+                    if (historyEvent.EventType == HistoryEventType.TaskScheduled)
+                    {
+                        taskScheduled = historyEvent;
+                    }
+                    continue;
+                }
+
+                if (historyEvent.EventType == HistoryEventType.TaskCompleted)
+                {
+                    if (historyEvent.TaskScheduledId == taskScheduled.EventId)
+                    {
+                        taskScheduled.IsProcessed = true;
+                        historyEvent.IsProcessed = true;
                         onSuccess(historyEvent.Result);
                         return false;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
+                if (taskFailed == null)
+                {
+                    if (historyEvent.EventType == HistoryEventType.TaskFailed)
+                    {
+                        if (historyEvent.TaskScheduledId == taskScheduled.EventId)
+                        {
+                            taskFailed = historyEvent;
+                        }
+                    }
+                    continue;
+                }
+
+                if (taskRetryTimer == null)
+                {
+                    if (historyEvent.EventType == HistoryEventType.TimerCreated)
+                    {
+                        taskRetryTimer = historyEvent;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
+                if (historyEvent.EventType == HistoryEventType.TimerFired)
+                {
+                    if (historyEvent.TimerId == taskRetryTimer.EventId)
+                    {
+                        taskScheduled.IsProcessed = true;
+                        taskFailed.IsProcessed = true;
+                        taskRetryTimer.IsProcessed = true;
+                        historyEvent.IsProcessed = true;
+                        if (attempt >= maxNumberOfAttempts)
+                        {
+                            onFinalFailure(taskFailed.Reason);
+                            return false;
+                        }
+                        else
+                        {
+                            attempt++;
+                            taskScheduled = null;
+                            taskFailed = null;
+                            taskRetryTimer = null;
+                        }
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
             }
 
-            return attempts < maxNumberOfAttempts;
+            return true;
         }
 
         private static int FindEventIndex(HistoryEvent[] orchestrationHistory, HistoryEvent historyEvent)
