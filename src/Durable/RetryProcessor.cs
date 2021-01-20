@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var firstTaskScheduledEventIndex = FindEventIndex(history, firstTaskScheduledEvent);
 
+            // Inspired by https://github.com/Azure/azure-functions-durable-js/commit/d789181234ace85df51ce8a849f15b7c8ae2a4f1
             var attempt = 1;
             HistoryEvent taskScheduled = null;
             HistoryEvent taskFailed = null;
