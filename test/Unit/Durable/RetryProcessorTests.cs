@@ -109,9 +109,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             AssertEventsProcessed(history, 6, 7, 8, 9, 10, 11);
         }
 
-        // Activity A failed on the first attempt and succeeded on the second attempt.
-        // Activity B failed on two attempts.
-        // Activity C failed on the first attempt and has not been retried yet.
+        // This history emulates the situation when multiple activity invocations are scheduled at the same time
+        // ("fan-out" scenario):
+        //   - Activity A failed on the first attempt and succeeded on the second attempt.
+        //   - Activity B failed after two attempts.
+        //   - Activity C failed on the first attempt and has not been retried yet.
         private static HistoryEvent[] CreateInterleavingHistory()
         {
             return new[]
