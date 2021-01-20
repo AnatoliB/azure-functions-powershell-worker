@@ -63,6 +63,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                             }
                             else
                             {
+                                // Reset IsProcessed, let RetryProcessor handle these events instead.
+                                scheduledHistoryEvent.IsProcessed = false;
+                                completedHistoryEvent.IsProcessed = false;
+
                                 bool shouldRetry = RetryProcessor.Process(
                                                         context.History,
                                                         scheduledHistoryEvent,
