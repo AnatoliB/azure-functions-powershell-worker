@@ -30,10 +30,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
         [ValidateNotNull]
         public object Input { get; set; }
 
-        [Parameter(ParameterSetName = "NoWait")]
+        [Parameter]
         public SwitchParameter NoWait { get; set; }
 
-        [Parameter(ParameterSetName = "Retry")]
+        [Parameter]
         [ValidateNotNull]
         public RetryOptions RetryOptions { get; set; }
 
