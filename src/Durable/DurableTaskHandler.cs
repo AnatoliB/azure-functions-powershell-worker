@@ -31,6 +31,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else
             {
+                context.OrchestrationActionCollector.NextBatch();
+
                 var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
                 var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
@@ -94,6 +96,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             OrchestrationContext context,
             Action<object> output)
         {
+            context.OrchestrationActionCollector.NextBatch();
+                
             var completedEvents = new List<HistoryEvent>();
             foreach (var task in tasksToWaitFor)
             {
@@ -139,6 +143,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             OrchestrationContext context,
             Action<object> output)
         {
+            context.OrchestrationActionCollector.NextBatch();
+                
             var completedTasks = new List<DurableTask>();
             DurableTask firstCompletedTask = null;
             int firstCompletedHistoryEventIndex = -1;
