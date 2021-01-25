@@ -76,6 +76,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                             Assert.Equal("Hello Tokyo", statusResponseBody.output[0].ToString());
                             Assert.Equal("Hello Seattle", statusResponseBody.output[1].ToString());
                             Assert.Equal("Hello London", statusResponseBody.output[2].ToString());
+                            Assert.Equal("Hello Toronto", statusResponseBody.output[3].ToString());
                             return;
                         }
 
