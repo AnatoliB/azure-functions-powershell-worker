@@ -22,13 +22,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _actions.Add(action);
         }
 
-        public Tuple<bool, List<OrchestrationAction>> WaitForActions(WaitHandle completionWaitHandle)
+        public Tuple<bool, List<List<OrchestrationAction>>> WaitForActions(WaitHandle completionWaitHandle)
         {
             var waitHandles = new[] { _stopEvent, completionWaitHandle };
             var signaledHandleIndex = WaitHandle.WaitAny(waitHandles);
             var signaledHandle = waitHandles[signaledHandleIndex];
             var shouldStop = ReferenceEquals(signaledHandle, _stopEvent);
-            return Tuple.Create(shouldStop, _actions);
+            return Tuple.Create(shouldStop, _actions.Count == 0 ? new List<List<OrchestrationAction>>() : new List<List<OrchestrationAction>> { _actions });
         }
 
         public void Stop()
