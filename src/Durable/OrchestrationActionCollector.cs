@@ -7,19 +7,33 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
 
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
 
     internal class OrchestrationActionCollector
     {
-        private readonly List<OrchestrationAction> _actions = new List<OrchestrationAction>();
+        private readonly List<List<OrchestrationAction>> _actions = new();
 
         private readonly AutoResetEvent _stopEvent = new AutoResetEvent(initialState: false);
 
+        private bool _nextBatch = true;
+
         public void Add(OrchestrationAction action)
         {
-            _actions.Add(action);
+            if (_nextBatch)
+            {
+                _actions.Add(new List<OrchestrationAction>());
+                _nextBatch = false;
+            }
+
+            _actions.Last().Add(action);
+        }
+
+        public void NextBatch()
+        {
+            _nextBatch = true;
         }
 
         public Tuple<bool, List<List<OrchestrationAction>>> WaitForActions(WaitHandle completionWaitHandle)
@@ -28,7 +42,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var signaledHandleIndex = WaitHandle.WaitAny(waitHandles);
             var signaledHandle = waitHandles[signaledHandleIndex];
             var shouldStop = ReferenceEquals(signaledHandle, _stopEvent);
-            return Tuple.Create(shouldStop, _actions.Count == 0 ? new List<List<OrchestrationAction>>() : new List<List<OrchestrationAction>> { _actions });
+            return Tuple.Create(shouldStop, _actions);
         }
 
         public void Stop()
