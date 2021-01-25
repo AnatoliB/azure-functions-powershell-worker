@@ -173,7 +173,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 history,
                 history[firstEventIndex],
                 maxNumberOfAttempts,
-                onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
+                onSuccess: result => { Assert.True(false, $"Unexpected output: {result}"); },
                 onFinalFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
 
             Assert.True(shouldRetry);
@@ -187,7 +187,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 history,
                 history[firstEventIndex],
                 maxNumberOfAttempts,
-                onSuccess: obj => { Assert.True(false, $"Unexpected output: {obj}"); },
+                onSuccess: result => { Assert.True(false, $"Unexpected output: {result}"); },
                 onFinalFailure: reason =>
                 {
                     Assert.Null(actualFailureReason);
@@ -200,17 +200,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         private static void AssertRetryProcessorReportsSuccess(HistoryEvent[] history, int firstEventIndex, int maxNumberOfAttempts, string expectedOutput)
         {
-            object actualOutput = null;
+            string actualOutput = null;
 
             var shouldRetry = RetryProcessor.Process(
                 history,
                 history[firstEventIndex],
                 maxNumberOfAttempts,
-                onSuccess: obj =>
-                {
-                    Assert.Null(actualOutput);
-                    actualOutput = obj;
-                },
+                onSuccess: result =>
+                    {
+                        Assert.Null(actualOutput);
+                        actualOutput = result;
+                    },
                 onFinalFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
 
             Assert.False(shouldRetry);

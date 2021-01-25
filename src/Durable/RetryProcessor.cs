@@ -14,7 +14,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             HistoryEvent[] history,
             HistoryEvent firstTaskScheduledEvent,
             int maxNumberOfAttempts,
-            Action<object> onSuccess,
+            Action<string> onSuccess,
             Action<string> onFinalFailure)
         {
             var firstTaskScheduledEventIndex = FindEventIndex(history, firstTaskScheduledEvent);

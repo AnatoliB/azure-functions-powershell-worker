@@ -73,7 +73,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                                                         context.History,
                                                         scheduledHistoryEvent,
                                                         retryOptions.MaxNumberOfAttempts,
-                                                        output,
+                                                        onSuccess:
+                                                            result => {
+                                                                output(TypeExtensions.ConvertFromJson(result));
+                                                            },
                                                         onFailure);
                                 if (shouldRetry)
                                 {
