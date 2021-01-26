@@ -219,6 +219,48 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Equal(expectedNumberOfBatches, actions.Count);
         }
 
+        [Theory]
+        [InlineData(false, false, 1)]
+        [InlineData(true, false, 2)]
+        [InlineData(false, true, 2)]
+        [InlineData(true, true, 2)]
+        public void WaitAll_And_WaitAny_StartNewActivityBatch(bool invokeWaitAll, bool invokeWaitAny, int expectedNumberOfBatches)
+        {
+            var orchestrationContext = new OrchestrationContext { History = new HistoryEvent[0] };
+            var durableTaskHandler = new DurableTaskHandler();
+
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                new ActivityInvocationTask("Function", "Input"),
+                orchestrationContext,
+                noWait: true,
+                output: _ => {},
+                onFailure: _ => {}
+            );
+
+            if (invokeWaitAll)
+            {
+                durableTaskHandler.Stop(); // just to avoid the next call getting stuck waiting for a stop event
+                durableTaskHandler.WaitAll(new DurableTask[0], orchestrationContext, output: _ => {});
+            }
+
+            if (invokeWaitAny)
+            {
+                durableTaskHandler.Stop(); // just to avoid the next call getting stuck waiting for a stop event
+                durableTaskHandler.WaitAny(new DurableTask[0], orchestrationContext, output: _ => {});
+            }
+
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                new ActivityInvocationTask("Function", "Input"),
+                orchestrationContext,
+                noWait: true,
+                output: _ => {},
+                onFailure: _ => {}
+            );
+
+            var (_, actions) = orchestrationContext.OrchestrationActionCollector.WaitForActions(new AutoResetEvent(initialState: true));
+            Assert.Equal(expectedNumberOfBatches, actions.Count);
+        }
+
         private HistoryEvent[] CreateActivityHistory(string name, bool scheduled, bool completed, string output) {
             return CreateActivityHistory(name: name, scheduled: scheduled, restartTime: _restartTime, completed: completed, output: output, orchestratorStartedIsProcessed: false);
         }
