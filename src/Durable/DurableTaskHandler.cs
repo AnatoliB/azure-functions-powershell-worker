@@ -69,16 +69,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                                 scheduledHistoryEvent.IsProcessed = false;
                                 completedHistoryEvent.IsProcessed = false;
 
-                                bool shouldRetry = RetryProcessor.Process(
-                                                        context.History,
-                                                        scheduledHistoryEvent,
-                                                        retryOptions.MaxNumberOfAttempts,
-                                                        onSuccess:
-                                                            result => {
-                                                                output(TypeExtensions.ConvertFromJson(result));
-                                                            },
-                                                        onFailure);
-                                if (shouldRetry)
+                                var shouldContinueProcessing =
+                                    RetryProcessor.Process(
+                                        context.History,
+                                        scheduledHistoryEvent,
+                                        retryOptions.MaxNumberOfAttempts,
+                                        onSuccess:
+                                            result => {
+                                                output(TypeExtensions.ConvertFromJson(result));
+                                            },
+                                        onFailure);
+                                        
+                                if (shouldContinueProcessing)
                                 {
                                     InitiateAndWaitForStop(context);
                                 }
