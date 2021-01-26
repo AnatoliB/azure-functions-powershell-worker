@@ -23,6 +23,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions
         /// </summary>
         public readonly object Input;
 
+        /// <summary>
+        /// Retry options.
+        /// </summary>
         public readonly Dictionary<string, object> RetryOptions;
 
         public CallActivityWithRetryAction(string functionName, object input, RetryOptions retryOptions)
