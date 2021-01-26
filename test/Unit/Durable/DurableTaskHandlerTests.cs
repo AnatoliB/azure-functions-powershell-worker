@@ -8,6 +8,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
+    using System.Threading;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
     using Xunit;
@@ -189,6 +190,33 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     durableTaskHandler.WaitAny(tasksToWaitFor, orchestrationContext, _ => { });
                 });
+        }
+
+        [Theory]
+        [InlineData(false, 1, 1)]
+        [InlineData(false, 5, 5)]
+        [InlineData(true, 1, 1)]
+        [InlineData(true, 5, 1)]
+        public void StopAndInitiateDurableTaskOrReplay_AddsActivityBatch_UnlessNoWait(bool noWait, int numberOfActions, int expectedNumberOfBatches)
+        {
+            var orchestrationContext = new OrchestrationContext { History = new HistoryEvent[0] };
+            var durableTaskHandler = new DurableTaskHandler();
+
+            for (var i = 0; i < numberOfActions; ++i)
+            {
+                durableTaskHandler.Stop(); // just to avoid the next call getting stuck waiting for a stop event
+
+                durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                    new ActivityInvocationTask("Function", "Input"),
+                    orchestrationContext,
+                    noWait: noWait,
+                    output: _ => {},
+                    onFailure: _ => {}
+                );
+            }
+
+            var (_, actions) = orchestrationContext.OrchestrationActionCollector.WaitForActions(new AutoResetEvent(initialState: true));
+            Assert.Equal(expectedNumberOfBatches, actions.Count);
         }
 
         private HistoryEvent[] CreateActivityHistory(string name, bool scheduled, bool completed, string output) {
