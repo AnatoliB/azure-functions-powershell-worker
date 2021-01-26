@@ -42,7 +42,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             Assert.NotNull(initialResponseBodyObject.terminatePostUri);
             Assert.NotNull(initialResponseBodyObject.rewindPostUri);
 
-            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
+            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(90);
             var startTime = DateTime.UtcNow;
 
             using (var httpClient = new HttpClient())
